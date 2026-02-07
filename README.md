@@ -15,7 +15,7 @@
 ## Installation
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/) in your browser
-2. [**Click here to install DoorDash Enhanced**](https://raw.githubusercontent.com/SysAdminDoc/DoorDash-Enhanced/main/DoorDash_Enhanced.user.js)
+2. [**Click here to install DoorDash Enhanced**](https://github.com/SysAdminDoc/Doordash-Enhanced/raw/refs/heads/main/DoorDashEnhanced.user.js)
 3. Confirm the installation when prompted
 
 To access settings, press **Alt+P** or click the gear icon in the DoorDash header bar.
