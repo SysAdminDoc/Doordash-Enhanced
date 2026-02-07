@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DoorDash Enhanced
 // @namespace    https://github.com/SysAdminDoc
-// @version      2.2.0
+// @version      2.6.1
 // @description  Comprehensive DoorDash enhancer: dark mode, ad/promo blocking, fee transparency, UI cleanup, keyboard shortcuts, and more.
 // @author       SysAdminDoc
 // @match        https://www.doordash.com/*
@@ -10,7 +10,10 @@
 // @grant        GM_setValue
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
-// @run-at       document-idle
+// @run-at       document-start
+// @icon         data:image/png;base64,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
+// @downloadURL  https://github.com/SysAdminDoc/Doordash-Enhanced/raw/refs/heads/main/DoorDashEnhanced.user.js
+// @updateURL    https://github.com/SysAdminDoc/Doordash-Enhanced/raw/refs/heads/main/DoorDashEnhanced.user.js
 // @license      MIT
 // ==/UserScript==
 
@@ -18,7 +21,7 @@
     'use strict';
 
     var SCRIPT_ID = 'dd-enhanced';
-    var VERSION   = '2.2.0';
+    var VERSION   = '2.6.1';
 
     var DEFAULT_SETTINGS = {
         darkMode:            true,
@@ -36,6 +39,10 @@
         autoExpandFees:      true,
         hideTurnstile:       true,
         visualFlair:         true,
+        hideElectronics:     true,
+        tipDefault:          'off',  // 'off', 'remember', or dollar amount like '5.00'
+        checkoutFlair:       true,
+        storePolish:         true,
     };
 
     function getSetting(key) { return GM_getValue(SCRIPT_ID + '_' + key, DEFAULT_SETTINGS[key]); }
@@ -130,21 +137,67 @@
             key: 'blockSponsoredCards',
             name: 'Hide Sponsored Listings',
             group: 'Ad Blocking',
-            desc: 'Remove sponsored/promoted store cards from feeds',
+            desc: 'Remove sponsored/promoted store cards, carousels, and retail items',
+            styleId: SCRIPT_ID + '-nosponsor',
             init: function() {
-                this._obs = safeObserver(function(node) {
-                    var cards = [];
-                    if (node.matches && node.matches('[data-testid="card.store"], [data-anchor-id="StoreCard"]')) cards.push(node);
-                    else if (node.querySelectorAll) {
-                        node.querySelectorAll('[data-testid="card.store"], [data-anchor-id="StoreCard"]').forEach(function(c) { cards.push(c); });
+                injectStyle(this.styleId, '.' + SCRIPT_ID + '-sponsored-hidden { display: none !important; }');
+
+                var self = this;
+                function isCardBoundary(el) {
+                    if (!el) return false;
+                    var tid = (el.dataset && (el.dataset.testid || '')) || '';
+                    // Store card wrappers (homepage)
+                    if (/^sc-615f47d9-2\b/.test(el.className || '') ||
+                        /sc-2c225cf6-\d/.test(el.className || '')) return true;
+                    // Retail item cards
+                    if (tid === 'RetailItemCardCardContent') return true;
+                    // Sponsored carousel section
+                    if (tid === 'LegoStandardCarouselContainer') return true;
+                    // Generic carousel card wrapper with min-height (sc-51d1bf93-0)
+                    if (/sc-51d1bf93-0\b/.test(el.className || '') && el.style && el.style.minHeight) return true;
+                    return false;
+                }
+
+                function sweep() {
+                    // Find EVERY "Sponsored" text node on the page via TreeWalker
+                    var walker = document.createTreeWalker(
+                        document.body, NodeFilter.SHOW_TEXT,
+                        { acceptNode: function(n) {
+                            return n.textContent.trim() === 'Sponsored' ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                        }}
+                    );
+                    var node;
+                    while ((node = walker.nextNode())) {
+                        var el = node.parentElement;
+                        if (!el) continue;
+                        // Walk up to find the card boundary
+                        var p = el;
+                        for (var i = 0; i < 25 && p && p !== document.body; i++) {
+                            if (isCardBoundary(p)) {
+                                if (!p.classList.contains(SCRIPT_ID + '-sponsored-hidden')) {
+                                    p.classList.add(SCRIPT_ID + '-sponsored-hidden');
+                                    console.log('[DD Enhanced] Hid sponsored: ' + (p.dataset.testid || p.className.split(' ')[0]));
+                                }
+                                break;
+                            }
+                            p = p.parentElement;
+                        }
                     }
-                    cards.forEach(function(card) {
-                        if (/\bsponsored\b/i.test(card.textContent || ''))
-                            card.style.setProperty('display', 'none', 'important');
-                    });
-                });
+                }
+
+                // Run immediately + on mutations + periodic
+                sweep();
+                self._obs = safeObserver(function() { sweep(); });
+                self._timer = setInterval(sweep, 1500);
             },
-            destroy: function() { if (this._obs) this._obs.disconnect(); }
+            destroy: function() {
+                removeStyle(this.styleId);
+                if (this._obs) this._obs.disconnect();
+                if (this._timer) clearInterval(this._timer);
+                document.querySelectorAll('.' + SCRIPT_ID + '-sponsored-hidden').forEach(function(el) {
+                    el.classList.remove(SCRIPT_ID + '-sponsored-hidden');
+                });
+            }
         },
 
         // -- FEE HIGHLIGHTER (checkout/cart only) -------------------------
@@ -312,6 +365,50 @@
                 });
             },
             destroy: function() { if (this._obs) this._obs.disconnect(); var el = document.getElementById(SCRIPT_ID + '-search-history'); if (el) el.remove(); }
+        },
+
+        // -- HIDE ELECTRONICS SIDEBAR -------------------------------------
+        {
+            key: 'hideElectronics',
+            name: 'Hide Electronics',
+            group: 'UI Cleanup',
+            desc: 'Remove Electronics category from the sidebar',
+            styleId: SCRIPT_ID + '-noelec',
+            init: function() { injectStyle(this.styleId, '#Electronics { display: none !important; }'); },
+            destroy: function() { removeStyle(this.styleId); }
+        },
+
+        // -- DEFAULT TIP --------------------------------------------------
+        {
+            key: 'tipDefault',
+            name: 'Default Tip',
+            group: 'Checkout',
+            desc: 'Auto-select your preferred tip on checkout',
+            custom: true,
+            init: function() { initTipDefault(); },
+            destroy: function() { destroyTipDefault(); }
+        },
+
+        // -- CHECKOUT FLAIR -----------------------------------------------
+        {
+            key: 'checkoutFlair',
+            name: 'Checkout Page Styling',
+            group: 'Appearance',
+            desc: 'Premium look for checkout: glassmorphism, animated totals, polished layout',
+            styleId: SCRIPT_ID + '-checkout',
+            init: function() { injectStyle(this.styleId, checkoutFlairCSS()); },
+            destroy: function() { removeStyle(this.styleId); }
+        },
+
+        // -- STORE PAGE POLISH ---------------------------------------------
+        {
+            key: 'storePolish',
+            name: 'Store Page Polish',
+            group: 'Appearance',
+            desc: 'Enhanced convenience/retail store layout, compact spacing, and dark mode fixes',
+            styleId: SCRIPT_ID + '-store',
+            init: function() { injectStyle(this.styleId, storePolishCSS()); },
+            destroy: function() { removeStyle(this.styleId); }
         },
 
         // -- VISUAL FLAIR -------------------------------------------------
@@ -647,6 +744,753 @@
 
 
     // =====================================================================
+    //  CHECKOUT PAGE STYLING
+    // =====================================================================
+    function checkoutFlairCSS() {
+        var S = SCRIPT_ID;
+        return [
+
+        // --- Keyframes ---
+        '@keyframes dd-ck-slide-in {',
+        '  from { opacity: 0; transform: translateY(20px); }',
+        '  to   { opacity: 1; transform: translateY(0); }',
+        '}',
+        '@keyframes dd-ck-total-glow {',
+        '  0%, 100% { text-shadow: 0 0 6px rgba(255,48,8,0.2); }',
+        '  50% { text-shadow: 0 0 16px rgba(255,48,8,0.45), 0 0 30px rgba(255,48,8,0.1); }',
+        '}',
+        '@keyframes dd-ck-progress-shine {',
+        '  0% { background-position: -200% center; }',
+        '  100% { background-position: 200% center; }',
+        '}',
+        '@keyframes dd-ck-bounce-in {',
+        '  0% { opacity: 0; transform: scale(0.85); }',
+        '  60% { transform: scale(1.04); }',
+        '  100% { opacity: 1; transform: scale(1); }',
+        '}',
+        '@keyframes dd-ck-pulse-border {',
+        '  0%, 100% { border-color: rgba(255,48,8,0.3); }',
+        '  50% { border-color: rgba(255,48,8,0.7); }',
+        '}',
+
+        // --- Vertical Stepper Sections (Account, Shipping, Payment) ---',
+        '[data-testid^="Checkout-vertical-stepper-"] {',
+        '  animation: dd-ck-slide-in 0.4s ease-out both;',
+        '  transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;',
+        '  border-radius: 14px !important;',
+        '  padding: 16px !important;',
+        '  margin-bottom: 8px !important;',
+        '  border: 1px solid var(--usage-color-border-default, #e0e0e0) !important;',
+        '}',
+        '[data-testid^="Checkout-vertical-stepper-"][aria-expanded="true"] {',
+        '  background: var(--usage-color-background-elevated-default, rgba(255,255,255,0.6)) !important;',
+        '  box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04) !important;',
+        '  border-color: rgba(255,48,8,0.25) !important;',
+        '}',
+        // Stagger the stepper sections
+        '[data-anchor-id="ACCOUNT_DETAILS"] { animation-delay: 0ms; }',
+        '[data-anchor-id="SHIPPING_DETAILS"] { animation-delay: 100ms; }',
+        '[data-anchor-id="PAYMENT_DETAILS"]  { animation-delay: 200ms; }',
+
+        // --- Step Labels ---
+        '[data-anchor-id="step-label"] {',
+        '  font-weight: 700 !important;',
+        '  letter-spacing: 0.3px;',
+        '}',
+
+        // --- Place Order Button ---
+        '[data-testid="PlaceOrderButton"] {',
+        '  border-radius: 14px !important;',
+        '  font-size: 16px !important;',
+        '  font-weight: 700 !important;',
+        '  letter-spacing: 0.5px;',
+        '  min-height: 52px !important;',
+        '  position: relative;',
+        '  overflow: hidden;',
+        '  animation: dd-ck-bounce-in 0.5s ease-out 0.3s both;',
+        '  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease !important;',
+        '  box-shadow: 0 4px 16px rgba(255,48,8,0.3), 0 2px 4px rgba(255,48,8,0.2) !important;',
+        '}',
+        '[data-testid="PlaceOrderButton"]:hover {',
+        '  transform: translateY(-2px) scale(1.01) !important;',
+        '  box-shadow: 0 8px 28px rgba(255,48,8,0.4), 0 4px 8px rgba(255,48,8,0.25) !important;',
+        '}',
+        '[data-testid="PlaceOrderButton"]:active {',
+        '  transform: translateY(1px) scale(0.98) !important;',
+        '}',
+        // Shimmer sweep on Place Order button
+        '[data-testid="PlaceOrderButton"]::after {',
+        '  content: "";',
+        '  position: absolute; inset: 0;',
+        '  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.2) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.2) 55%, transparent 65%);',
+        '  background-size: 250% 100%;',
+        '  animation: dd-ck-progress-shine 4s ease-in-out infinite;',
+        '  pointer-events: none;',
+        '  border-radius: inherit;',
+        '}',
+
+        // --- Order Total in button ---
+        '[data-testid="OrderCartTotal"] {',
+        '  font-weight: 800 !important;',
+        '}',
+
+        // --- Cart Item Cards ---
+        '[data-anchor-id="OrderItemContainer"] {',
+        '  transition: transform 0.2s ease, background 0.25s ease !important;',
+        '  border-radius: 12px !important;',
+        '  padding: 8px !important;',
+        '}',
+        '[data-anchor-id="OrderItemContainer"]:hover {',
+        '  background: var(--usage-color-background-hovered, rgba(0,0,0,0.03)) !important;',
+        '  transform: translateX(4px) !important;',
+        '}',
+
+        // --- Cart Item Images ---
+        '[data-anchor-id="OrderItemContainer"] picture img {',
+        '  border-radius: 10px !important;',
+        '  transition: transform 0.3s ease, box-shadow 0.3s ease !important;',
+        '}',
+        '[data-anchor-id="OrderItemContainer"]:hover picture img {',
+        '  transform: scale(1.08) !important;',
+        '  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;',
+        '}',
+
+        // --- Quantity Stepper ---
+        '[data-testid="QuantityContainer"] {',
+        '  border-radius: 10px !important;',
+        '  transition: box-shadow 0.2s ease !important;',
+        '}',
+        '[data-testid="QuantityContainer"]:hover {',
+        '  box-shadow: 0 0 0 2px rgba(255,48,8,0.2) !important;',
+        '}',
+        '[data-testid="stepper-expanded-quantity"] {',
+        '  font-weight: 700 !important;',
+        '  transition: transform 0.15s ease;',
+        '}',
+        '[data-testid="stepper-increment-button"]:active ~ [data-testid="stepper-expanded-quantity"],',
+        '[data-testid="stepper-decrement-button"]:active ~ [data-testid="stepper-expanded-quantity"] {',
+        '  transform: scale(1.2);',
+        '}',
+
+        // --- Line Items Section ---
+        '[data-testid="LineItems"] {',
+        '  border-radius: 14px !important;',
+        '  padding: 12px 16px !important;',
+        '  border: 1px solid var(--usage-color-border-default, #e0e0e0) !important;',
+        '  background: var(--usage-color-background-elevated-default, rgba(255,255,255,0.5)) !important;',
+        '  animation: dd-ck-slide-in 0.4s ease-out 0.15s both;',
+        '}',
+
+        // --- Individual Line Items ---
+        '[data-testid="Subtotal"],',
+        '[data-testid="Delivery Fee"],',
+        '[data-testid="Fees & Estimated Tax"],',
+        '[data-testid="Dasher Tip"] {',
+        '  padding: 6px 0 !important;',
+        '  transition: background 0.2s ease, padding-left 0.2s ease !important;',
+        '  border-radius: 6px;',
+        '}',
+        '[data-testid="Subtotal"]:hover,',
+        '[data-testid="Delivery Fee"]:hover,',
+        '[data-testid="Fees & Estimated Tax"]:hover,',
+        '[data-testid="Dasher Tip"]:hover {',
+        '  background: var(--usage-color-background-hovered, rgba(0,0,0,0.02)) !important;',
+        '  padding-left: 6px !important;',
+        '}',
+
+        // --- Total Line - Hero Treatment ---
+        '[data-testid="Total"] {',
+        '  padding: 12px 0 4px !important;',
+        '  margin-top: 4px !important;',
+        '  border-top: 2px solid var(--usage-color-border-default, #e0e0e0) !important;',
+        '}',
+        '[data-testid="Total"] [class*="Text-sc-"]:last-child {',
+        '  font-size: 20px !important;',
+        '  font-weight: 800 !important;',
+        '  animation: dd-ck-total-glow 3s ease-in-out infinite;',
+        '}',
+
+        // --- Tip Picker Buttons ---
+        '[data-anchor-id="TipPickerOption"] {',
+        '  border-radius: 12px !important;',
+        '  transition: transform 0.15s ease, box-shadow 0.2s ease !important;',
+        '  min-width: 56px;',
+        '}',
+        '[data-anchor-id="TipPickerOption"]:hover {',
+        '  transform: translateY(-2px) !important;',
+        '  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;',
+        '}',
+        '[data-anchor-id="TipPickerOption"]:active {',
+        '  transform: scale(0.95) !important;',
+        '}',
+        // Active tip button glow
+        '[data-anchor-id="TipPickerOption"][aria-checked="true"] {',
+        '  box-shadow: 0 2px 12px rgba(255,48,8,0.25) !important;',
+        '}',
+
+        // --- Delivery Time Options ---
+        '[class*="sc-4851ec00-0"] {',
+        '  border-radius: 14px !important;',
+        '  transition: transform 0.2s ease, box-shadow 0.2s ease !important;',
+        '}',
+        '[class*="sc-4851ec00-0"]:hover {',
+        '  transform: translateY(-2px) !important;',
+        '  box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;',
+        '}',
+        '[class*="sc-4851ec00-0"][aria-checked="true"] {',
+        '  box-shadow: 0 2px 12px rgba(255,48,8,0.2) !important;',
+        '}',
+
+        // --- Time Range Badge ---
+        '[data-testid="time-range"] {',
+        '  font-weight: 700 !important;',
+        '  letter-spacing: 0.2px;',
+        '}',
+
+        // --- Loyalty Rewards Banner ---
+        '[data-testid="store-loyalty-banner"] {',
+        '  border-radius: 14px !important;',
+        '  padding: 14px 16px !important;',
+        '  position: relative;',
+        '  overflow: hidden;',
+        '  animation: dd-ck-slide-in 0.4s ease-out 0.2s both;',
+        '  transition: transform 0.2s ease, box-shadow 0.2s ease !important;',
+        '}',
+        '[data-testid="store-loyalty-banner"]:hover {',
+        '  transform: translateY(-2px) !important;',
+        '  box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;',
+        '}',
+        '[data-testid="store-loyalty-banner-title"] {',
+        '  font-weight: 700 !important;',
+        '}',
+
+        // --- Progress Bar - Animated Shine ---
+        '[data-testid="ProgressBar"] {',
+        '  border-radius: 20px !important;',
+        '  overflow: hidden;',
+        '  position: relative;',
+        '}',
+        '[data-testid="ProgressBar"]::after {',
+        '  content: "";',
+        '  position: absolute; inset: 0;',
+        '  background: linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%);',
+        '  background-size: 200% 100%;',
+        '  animation: dd-ck-progress-shine 2.5s ease-in-out infinite;',
+        '  pointer-events: none;',
+        '}',
+
+        // --- Store Logo ---
+        '[data-testid="StoreLogo"] {',
+        '  border-radius: 12px !important;',
+        '  transition: transform 0.3s ease, box-shadow 0.3s ease !important;',
+        '  box-shadow: 0 2px 8px rgba(0,0,0,0.1);',
+        '}',
+        '[data-testid="StoreLogo"]:hover {',
+        '  transform: scale(1.08) rotate(2deg) !important;',
+        '  box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;',
+        '}',
+
+        // --- Gift Option Cell ---
+        '[data-testid="giftListCell"] {',
+        '  border-radius: 14px !important;',
+        '  transition: transform 0.2s ease, background 0.2s ease !important;',
+        '}',
+        '[data-testid="giftListCell"]:hover {',
+        '  transform: translateX(4px) !important;',
+        '  background: var(--usage-color-background-hovered, rgba(0,0,0,0.03)) !important;',
+        '}',
+
+        // --- Edit Buttons ---
+        '[data-testid$="-edit-button"] {',
+        '  border-radius: 10px !important;',
+        '  transition: transform 0.15s ease, background 0.2s ease !important;',
+        '}',
+        '[data-testid$="-edit-button"]:hover {',
+        '  transform: scale(1.05) !important;',
+        '}',
+
+        // --- Promo Code Button ---
+        '[data-anchor-id="OpenPromoCodeModalButton"] {',
+        '  border-radius: 10px !important;',
+        '  transition: transform 0.2s ease, color 0.2s ease !important;',
+        '}',
+        '[data-anchor-id="OpenPromoCodeModalButton"]:hover {',
+        '  transform: translateX(3px) !important;',
+        '}',
+        '[data-anchor-id="OpenPromoCodeModalButton"]:hover svg {',
+        '  transform: rotate(8deg) scale(1.1); transition: transform 0.3s ease;',
+        '}',
+
+        // --- Checkout Food Item Cells ---
+        '[class*="ListCellContainer-sc-f56khb"][aria-label*="click to open modal"] {',
+        '  transition: transform 0.2s ease, background 0.2s ease !important;',
+        '  border-radius: 10px !important;',
+        '}',
+        '[class*="ListCellContainer-sc-f56khb"][aria-label*="click to open modal"]:hover {',
+        '  transform: translateX(4px) !important;',
+        '  background: var(--usage-color-background-hovered, rgba(0,0,0,0.03)) !important;',
+        '}',
+        '[class*="ListCellContainer-sc-f56khb"][aria-label*="click to open modal"]:hover picture img {',
+        '  transform: scale(1.08); transition: transform 0.3s ease;',
+        '}',
+
+        // --- Loyalty Banner Shimmer Sweep ---
+        '[data-testid="store-loyalty-banner"]::after {',
+        '  content: ""; position: absolute; inset: 0;',
+        '  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 55%, transparent 100%);',
+        '  background-size: 200% 100%;',
+        '  animation: dd-ck-progress-shine 5s ease-in-out infinite;',
+        '  pointer-events: none;',
+        '}',
+
+        // --- Checkout Columns Staggered Entrance ---
+        '[class*="sc-c6cb4208-1"] {',
+        '  animation: dd-ck-slide-in 0.5s ease-out 0.1s both;',
+        '}',
+        '[class*="sc-c6cb4208-2"] {',
+        '  animation: dd-ck-slide-in 0.5s ease-out 0.25s both;',
+        '}',
+
+        // --- Checkout Items Wrapper ---
+        '[data-testid="checkoutItemDetailsWrapper"] {',
+        '  border-radius: 14px !important; overflow: hidden;',
+        '}',
+
+        // --- Mapbox on checkout ---
+        '.mapboxgl-map {',
+        '  border-radius: 14px !important;',
+        '  overflow: hidden !important;',
+        '  box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important;',
+        '}',
+
+        ].join('\n');
+    }
+
+
+    // =====================================================================
+    //  DEFAULT TIP - Auto-select preferred tip on checkout
+    // =====================================================================
+    var _tipObs = null;
+    var _tipApplied = false;
+
+    function initTipDefault() {
+        _tipApplied = false;
+        _tipObs = safeObserver(function() { applyTipDefault(); });
+        applyTipDefault();
+    }
+
+    function destroyTipDefault() {
+        if (_tipObs) { _tipObs.disconnect(); _tipObs = null; }
+    }
+
+    function applyTipDefault() {
+        if (_tipApplied) return;
+        var mode = getSetting('tipDefault');
+        if (!mode || mode === 'off') return;
+
+        var group = document.querySelector('[role="radiogroup"][aria-label="Tip Amount"]');
+        if (!group) return;
+
+        // Attach save-on-click listeners (for "remember" mode)
+        if (!group.dataset.ddTipWatching) {
+            group.dataset.ddTipWatching = '1';
+            group.addEventListener('click', function(e) {
+                var btn = e.target.closest('[data-anchor-id="TipPickerOption"]');
+                if (!btn) return;
+                setTimeout(function() {
+                    var text = btn.textContent.trim();
+                    if (text && text !== 'Other' && text.startsWith('$')) {
+                        GM_setValue(SCRIPT_ID + '_tipLastAmount', text.replace('$', ''));
+                    }
+                }, 100);
+            });
+        }
+
+        var targetAmount;
+        if (mode === 'remember') {
+            targetAmount = GM_getValue(SCRIPT_ID + '_tipLastAmount', null);
+            if (!targetAmount) return; // Nothing remembered yet
+        } else {
+            targetAmount = mode; // Direct dollar amount like "5.00"
+        }
+
+        // Check if the target is already selected
+        var buttons = group.querySelectorAll('[data-anchor-id="TipPickerOption"]');
+        var matched = false;
+        var otherBtn = null;
+        var targetFloat = parseFloat(targetAmount);
+
+        buttons.forEach(function(btn) {
+            var text = btn.textContent.trim();
+            if (text === 'Other') { otherBtn = btn; return; }
+            var val = parseFloat(text.replace('$', ''));
+            if (!isNaN(val) && Math.abs(val - targetFloat) < 0.01) {
+                if (btn.getAttribute('aria-checked') !== 'true') {
+                    btn.click();
+                    console.log('[DD Enhanced] Tip auto-selected: $' + targetAmount);
+                }
+                matched = true;
+            }
+        });
+
+        if (!matched && otherBtn) {
+            // Click "Other" to open custom input
+            if (otherBtn.getAttribute('aria-checked') !== 'true') {
+                otherBtn.click();
+            }
+            // Wait for the input field to appear then fill it
+            setTimeout(function() {
+                var input = group.closest('[class*="sc-a1750b88"]');
+                if (!input) input = group.parentElement;
+                var allInputs = input ? input.querySelectorAll('input') : document.querySelectorAll('[role="radiogroup"][aria-label="Tip Amount"] ~ * input, [class*="sc-a1750b88"] input');
+                if (!allInputs.length) {
+                    // Broader search near the tip section
+                    var tipSection = group.closest('[class*="StyledStackChildren"]') || group.parentElement.parentElement;
+                    if (tipSection) allInputs = tipSection.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
+                }
+                if (allInputs.length) {
+                    var tipInput = allInputs[allInputs.length - 1]; // Usually the last/newest input
+                    var nativeSet = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                    nativeSet.call(tipInput, targetAmount);
+                    tipInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    tipInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    // Try pressing Enter or finding a submit/apply button
+                    setTimeout(function() {
+                        tipInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
+                        // Also look for a nearby apply/update button
+                        var parent = tipInput.closest('div[class*="sc-"]') || tipInput.parentElement;
+                        if (parent) {
+                            var applyBtn = parent.querySelector('button');
+                            if (applyBtn) applyBtn.click();
+                        }
+                    }, 100);
+                    console.log('[DD Enhanced] Tip custom amount set: $' + targetAmount);
+                } else {
+                    console.log('[DD Enhanced] Tip input field not found after clicking Other');
+                }
+            }, 400);
+        }
+
+        _tipApplied = true;
+        // Save the amount we just applied (for "remember" mode feedback)
+        if (mode !== 'remember') {
+            GM_setValue(SCRIPT_ID + '_tipLastAmount', targetAmount);
+        }
+    }
+
+
+    // =====================================================================
+    //  STORE PAGE POLISH
+    // =====================================================================
+    function storePolishCSS() {
+        return [
+
+        // --- Keyframes ---
+        '@keyframes dd-sp-slide-up {',
+        '  from { opacity: 0; transform: translateY(14px); }',
+        '  to   { opacity: 1; transform: translateY(0); }',
+        '}',
+        '@keyframes dd-sp-pop {',
+        '  0% { transform: scale(0.92); opacity: 0; }',
+        '  60% { transform: scale(1.03); }',
+        '  100% { transform: scale(1); opacity: 1; }',
+        '}',
+
+        // ==========================================
+        //  STORE HEADER - Compact & Clean
+        // ==========================================
+
+        // Store header wrapper - tighten vertical space
+        '[class*="sc-dd3a85f9-2"] {',
+        '  margin-top: 70px !important;',
+        '  margin-bottom: 0 !important;',
+        '}',
+
+        // Inner header container - remove excess padding
+        '[class*="sc-9ef7f31f-1"] {',
+        '  padding: 0 !important;',
+        '  margin: 0 !important;',
+        '}',
+
+        // Store logo - rounded with subtle shadow
+        '[data-anchor-id="ConvenienceStoreHeaderLogo"] {',
+        '  border-radius: 14px !important;',
+        '  overflow: hidden;',
+        '  box-shadow: 0 2px 12px rgba(0,0,0,0.12);',
+        '  transition: transform 0.3s ease, box-shadow 0.3s ease;',
+        '}',
+        '[data-anchor-id="ConvenienceStoreHeaderLogo"]:hover {',
+        '  transform: scale(1.05);',
+        '  box-shadow: 0 4px 20px rgba(0,0,0,0.18);',
+        '}',
+        '[data-anchor-id="ConvenienceStoreHeaderLogo"] img {',
+        '  border-radius: 14px !important;',
+        '}',
+
+        // Delivery info row - compact
+        '[data-testid="CurrentOrderInfoDetail"] {',
+        '  padding: 4px 0 !important;',
+        '}',
+
+        // Delivery fee badge
+        '[data-testid="delivery-fee-container"] {',
+        '  border-radius: 10px !important;',
+        '  transition: transform 0.2s ease;',
+        '}',
+        '[data-testid="delivery-fee-container"]:hover {',
+        '  transform: translateY(-1px);',
+        '}',
+
+        // Rating badge - warm amber glow
+        '[class*="StyledInlineChildren-sc-1dbwnk9-0"][class*="eVPsWJ"] {',
+        '  background: linear-gradient(135deg, #92700a, #b8860b) !important;',
+        '  border-radius: 8px !important; padding: 2px 8px !important;',
+        '  box-shadow: 0 2px 8px rgba(184,134,11,0.3);',
+        '  transition: transform 0.2s ease, box-shadow 0.2s ease;',
+        '}',
+        '[class*="StyledInlineChildren-sc-1dbwnk9-0"][class*="eVPsWJ"]:hover {',
+        '  transform: scale(1.08);',
+        '  box-shadow: 0 4px 14px rgba(184,134,11,0.4);',
+        '}',
+        '[class*="StyledInlineChildren-sc-1dbwnk9-0"][class*="eVPsWJ"] span {',
+        '  color: #fff !important; font-weight: 700 !important;',
+        '}',
+
+        // ==========================================
+        //  SIDEBAR NAVIGATION - Dark Mode Fixes
+        // ==========================================
+
+        // Sidebar nav text
+        '[class*="StyledMotionBody-sc-wwjeiz"] {',
+        '  color: var(--usage-color-text-default, inherit);',
+        '}',
+
+        // Sidebar active indicator dots
+        '[class*="sc-e91617d-4"] {',
+        '  color: var(--usage-color-text-default, inherit);',
+        '}',
+
+        // Sidebar nav item hover
+        '.prism-side-nav-item a {',
+        '  transition: background 0.2s ease, transform 0.15s ease !important;',
+        '  border-radius: 10px !important;',
+        '}',
+        '.prism-side-nav-item a:hover {',
+        '  background: var(--usage-color-background-hovered, rgba(0,0,0,0.05)) !important;',
+        '}',
+
+        // Sidebar nav item text styling
+        '[class*="StyledText-sc-1ypoh6y-0"] {',
+        '  color: var(--usage-color-text-default, inherit) !important;',
+        '}',
+
+        // ==========================================
+        //  CATEGORY CAROUSEL TABS
+        // ==========================================
+
+        // Tab container - compact padding
+        '[class*="StyledInlineChildren-sc-1dbwnk9-0"][class*="eFINKY"] {',
+        '  padding: 0 !important; margin: 0 !important;',
+        '}',
+
+        // Individual category tab
+        '[data-testid="ConvenienceStorePageCarouselItem"] {',
+        '  transition: transform 0.2s ease;',
+        '}',
+        '[data-testid="ConvenienceStorePageCarouselItem"]:hover {',
+        '  transform: translateY(-2px);',
+        '}',
+
+        // Tab icons
+        '[class*="sc-76f6277e-3"] img {',
+        '  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);',
+        '}',
+        '[data-testid="ConvenienceStorePageCarouselItem"]:hover [class*="sc-76f6277e-3"] img {',
+        '  transform: scale(1.15) rotate(-5deg);',
+        '}',
+
+        // Selected tab indicator
+        '[data-testid="ConvenienceStorePageCarouselItem"][data-is-selected="true"] [class*="sc-76f6277e-2"] {',
+        '  box-shadow: 0 2px 8px rgba(255,48,8,0.2);',
+        '}',
+
+        // Carousel pagination dots - compact
+        '[class*="Root-sc-nmoa4y-4"] {',
+        '  padding: 0 !important; margin: 0 !important;',
+        '}',
+
+        // ==========================================
+        //  CATEGORY SECTIONS
+        // ==========================================
+
+        // Section wrapper - compact
+        '[class*="sc-1fe87388-0"] {',
+        '  padding: 0 !important; margin: 0 !important;',
+        '}',
+
+        // Section title
+        '[data-anchor-id="CarouselControllerTitleContent"] {',
+        '  transition: color 0.2s ease;',
+        '}',
+
+        // "See all" link hover
+        '[class*="sc-1fe87388-1"] a:hover {',
+        '  text-decoration: none !important;',
+        '  opacity: 0.8;',
+        '}',
+
+        // ==========================================
+        //  RETAIL ITEM CARDS
+        // ==========================================
+
+        // Card container
+        '[data-testid="RetailItemCardCardContent"] {',
+        '  border-radius: 14px !important;',
+        '  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1),',
+        '              box-shadow 0.25s ease !important;',
+        '  animation: dd-sp-slide-up 0.4s ease-out both;',
+        '  overflow: hidden;',
+        '}',
+        '[data-testid="RetailItemCardCardContent"]:hover {',
+        '  transform: translateY(-4px) scale(1.02) !important;',
+        '  box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;',
+        '  z-index: 5 !important; position: relative;',
+        '}',
+
+        // Card images - zoom on hover
+        '[data-testid="RetailItemCardImageWithOptionalStepper"] img {',
+        '  transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94) !important;',
+        '  border-radius: 10px !important;',
+        '}',
+        '[data-testid="RetailItemCardCardContent"]:hover [data-testid="RetailItemCardImageWithOptionalStepper"] img {',
+        '  transform: scale(1.06) !important;',
+        '}',
+
+        // Price text
+        '[class*="sc-85923f71-0"] {',
+        '  font-weight: 700 !important;',
+        '}',
+
+        // Item name on hover - subtle shift
+        '[data-testid="price-name-info-opacity-wrapper"] {',
+        '  transition: transform 0.2s ease;',
+        '}',
+        '[data-testid="RetailItemCardCardContent"]:hover [data-testid="price-name-info-opacity-wrapper"] {',
+        '  transform: translateY(-1px);',
+        '}',
+
+        // Add button - vibrant green with pop animation
+        '[data-testid="add-button-label"] {',
+        '  transition: transform 0.15s ease;',
+        '}',
+        '[class*="sc-76322cb4-4"][class*="ffjZqa"] {',
+        '  background: linear-gradient(135deg, #2d9a06, #3eae0a) !important;',
+        '  color: #fff !important;',
+        '  border-radius: 8px !important;',
+        '  box-shadow: 0 2px 8px rgba(62,174,10,0.3);',
+        '  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1),',
+        '              box-shadow 0.2s ease !important;',
+        '}',
+        '[class*="sc-76322cb4-4"][class*="ffjZqa"]:hover {',
+        '  transform: scale(1.08) !important;',
+        '  box-shadow: 0 4px 14px rgba(62,174,10,0.45) !important;',
+        '}',
+
+        // "Add" text styling
+        '[class*="Text-sc-1nn8hom-0"][class*="dfSikg"] {',
+        '  font-weight: 600 !important;',
+        '}',
+
+        // Quantity stepper on cards
+        '[data-testid="RetailItemCardStepperContainer"] {',
+        '  transition: opacity 0.2s ease;',
+        '}',
+        '[data-testid="RetailItemCardQuantityStepperContainer"] [data-testid="QuantityContainer"] {',
+        '  border-radius: 10px !important;',
+        '  transition: box-shadow 0.2s ease;',
+        '}',
+        '[data-testid="RetailItemCardQuantityStepperContainer"] [data-testid="QuantityContainer"]:hover {',
+        '  box-shadow: 0 0 0 2px rgba(255,48,8,0.2);',
+        '}',
+
+        // ==========================================
+        //  SEARCH BAR
+        // ==========================================
+
+        '[data-testid="sticky-store-search-v2"] [class*="InputContainer-sc-"] {',
+        '  border-radius: 12px !important;',
+        '  transition: box-shadow 0.3s ease !important;',
+        '}',
+        '[data-testid="sticky-store-search-v2"] input:focus {',
+        '  box-shadow: 0 0 0 3px rgba(255,48,8,0.15) !important;',
+        '}',
+
+        // ==========================================
+        //  LEGO SECTION (grid layouts)
+        // ==========================================
+
+        // Lego facet cards (sponsored/featured brand cards)
+        '[data-testid="lego-facet-card-creative-cell"] {',
+        '  border-radius: 14px !important;',
+        '  overflow: hidden;',
+        '  transition: transform 0.25s ease, box-shadow 0.25s ease !important;',
+        '}',
+        '[data-testid="lego-facet-card-creative-cell"]:hover {',
+        '  transform: translateY(-3px) !important;',
+        '  box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;',
+        '}',
+
+        // Lego section container
+        '[data-testid="ConvenienceLegoSectionContainer"] {',
+        '  animation: dd-sp-slide-up 0.5s ease-out both;',
+        '}',
+
+        // ==========================================
+        //  GLOBAL SPACING REDUCTION
+        // ==========================================
+
+        // Reduce triple-nested div padding bloat
+        '[class*="sc-dd3a85f9"] > div > div {',
+        '  margin-bottom: 0 !important;',
+        '}',
+
+        // Carousel navigation arrow buttons
+        '[data-testid*="carousel-left-button"], [data-testid*="carousel-right-button"] {',
+        '  transition: transform 0.15s ease, opacity 0.2s ease !important;',
+        '}',
+        '[data-testid*="carousel-left-button"]:hover, [data-testid*="carousel-right-button"]:hover {',
+        '  transform: scale(1.15) !important;',
+        '}',
+        '[data-testid*="carousel-left-button"]:active, [data-testid*="carousel-right-button"]:active {',
+        '  transform: scale(0.9) !important;',
+        '}',
+
+        // ==========================================
+        //  "BEST VALUE" / BADGE TAGS
+        // ==========================================
+        '[data-testid*="best_value"] {',
+        '  animation: dd-sp-pop 0.4s ease-out both;',
+        '}',
+
+        // ==========================================
+        //  TEXT COLOR FIXES (dark mode compat)
+        // ==========================================
+
+        // PlaceOrder button inner text
+        '[class*="StyledInlineChildren-sc-1dbwnk9-0"][class*="bApFGz"] {',
+        '  color: #ffffff !important;',
+        '}',
+
+        // Transparent background fix
+        '[class*="StyledStackChildren-sc-yj3wxb-0"][class*="sc-afac318a-0"] {',
+        '  background-color: transparent !important;',
+        '}',
+
+        ].join("\n");
+    }
+
+
+    // =====================================================================
     //  SEARCH HISTORY
     // =====================================================================
     function showSearchHistory(inputEl, history) {
@@ -778,6 +1622,7 @@
         history.replaceState = function() { origReplace.apply(this, arguments); window.dispatchEvent(new Event('dd-nav')); };
         window.addEventListener('popstate', function() { window.dispatchEvent(new Event('dd-nav')); });
         window.addEventListener('dd-nav', function() {
+            _tipApplied = false; // Reset so tip can re-apply on new checkout
             setTimeout(function() {
                 features.forEach(function(f) { if (getSetting(f.key) && f.onNavigate) f.onNavigate(); });
                 if (getSetting('feeHighlighter')) annotateFees();
@@ -946,17 +1791,99 @@
                 var row = document.createElement('div');
                 Object.assign(row.style, {
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '12px 14px', cursor: 'pointer',
+                    padding: '12px 14px', cursor: f.custom ? 'default' : 'pointer',
                     borderBottom: idx < items.length - 1 ? '1px solid ' + borderC : 'none',
                     transition: 'background 0.15s',
                 });
-                row.onmouseenter = function() { row.style.background = rowHov; };
-                row.onmouseleave = function() { row.style.background = 'transparent'; };
+                if (!f.custom) {
+                    row.onmouseenter = function() { row.style.background = rowHov; };
+                    row.onmouseleave = function() { row.style.background = 'transparent'; };
+                }
 
                 var label = document.createElement('div');
                 label.style.flex = '1';
                 label.innerHTML = '<div style="font-size:14px;font-weight:500">' + f.name + '</div><div style="font-size:11px;color:#888;margin-top:2px">' + f.desc + '</div>';
 
+                // --- Custom UI for tipDefault ---
+                if (f.key === 'tipDefault') {
+                    var tipVal = getSetting('tipDefault') || 'off';
+                    var ctrl = document.createElement('div');
+                    ctrl.style.cssText = 'flex-shrink:0;margin-left:12px;display:flex;align-items:center;gap:6px';
+
+                    var sel = document.createElement('select');
+                    Object.assign(sel.style, {
+                        background: isDark ? '#222230' : '#f0f0f0', color: fg,
+                        border: '1px solid ' + borderC, borderRadius: '8px',
+                        padding: '6px 8px', fontSize: '13px', cursor: 'pointer',
+                        outline: 'none',
+                    });
+                    var opts = [
+                        { val: 'off', text: 'Off' },
+                        { val: 'remember', text: 'Remember last' },
+                        { val: 'custom', text: 'Fixed amount' },
+                    ];
+                    opts.forEach(function(o) {
+                        var opt = document.createElement('option');
+                        opt.value = o.val; opt.textContent = o.text;
+                        if (o.val === 'off' && tipVal === 'off') opt.selected = true;
+                        if (o.val === 'remember' && tipVal === 'remember') opt.selected = true;
+                        if (o.val === 'custom' && tipVal !== 'off' && tipVal !== 'remember') opt.selected = true;
+                        sel.appendChild(opt);
+                    });
+
+                    var amtWrap = document.createElement('div');
+                    amtWrap.style.cssText = 'display:flex;align-items:center;gap:2px';
+                    var dollar = document.createElement('span');
+                    dollar.textContent = '$';
+                    dollar.style.cssText = 'font-size:14px;font-weight:600;color:' + fg;
+                    var amtInput = document.createElement('input');
+                    Object.assign(amtInput.style, {
+                        width: '60px', background: isDark ? '#222230' : '#f0f0f0', color: fg,
+                        border: '1px solid ' + borderC, borderRadius: '8px',
+                        padding: '6px 8px', fontSize: '13px', outline: 'none',
+                    });
+                    amtInput.type = 'text'; amtInput.placeholder = '0.00';
+                    if (tipVal !== 'off' && tipVal !== 'remember') amtInput.value = tipVal;
+
+                    function toggleAmtInput() {
+                        var show = sel.value === 'custom';
+                        amtWrap.style.display = show ? 'flex' : 'none';
+                    }
+                    toggleAmtInput();
+
+                    function saveTipSetting() {
+                        var v = sel.value;
+                        if (v === 'custom') {
+                            var amt = amtInput.value.replace(/[^0-9.]/g, '');
+                            if (!amt || isNaN(parseFloat(amt))) amt = '0';
+                            v = parseFloat(amt).toFixed(2);
+                            amtInput.value = v;
+                        }
+                        setSetting('tipDefault', v);
+                        _tipApplied = false;
+                        try { if (v !== 'off') { initTipDefault(); } else { destroyTipDefault(); } } catch(e) {}
+                    }
+
+                    sel.addEventListener('change', function() { toggleAmtInput(); saveTipSetting(); });
+                    amtInput.addEventListener('change', saveTipSetting);
+                    amtInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') saveTipSetting(); });
+
+                    var remembered = GM_getValue(SCRIPT_ID + '_tipLastAmount', null);
+                    if (remembered && tipVal === 'remember') {
+                        label.querySelector('div:last-child').textContent = f.desc + ' (last: $' + remembered + ')';
+                    }
+
+                    amtWrap.appendChild(dollar);
+                    amtWrap.appendChild(amtInput);
+                    ctrl.appendChild(sel);
+                    ctrl.appendChild(amtWrap);
+                    row.appendChild(label);
+                    row.appendChild(ctrl);
+                    box.appendChild(row);
+                    return;
+                }
+
+                // --- Standard boolean toggle ---
                 var toggle = document.createElement('div');
                 toggle.style.cssText = 'flex-shrink:0;margin-left:12px';
                 function renderToggle(on) {
@@ -1009,6 +1936,39 @@
     // =====================================================================
     function init() {
         injectStyle(SCRIPT_ID + '-core', [
+            '/* Custom overrides */',
+            'div.StyledStackChildren-sc-yj3wxb-0.jNPkjN.sc-afac318a-0.dhGsxO {',
+            '  background-color: transparent !important;',
+            '}',
+            'div.StyledInlineChildren-sc-1dbwnk9-0.bApFGz {',
+            '  color: #ffffff !important;',
+            '}',
+            '/* Sidebar icon slots - blue accent */',
+            '.lbSHmf.IconSlot-sc-194ujhf-0 {',
+            '  background-color: #1e88e5 !important;',
+            '  border-radius: 8px;',
+            '}',
+            '/* Sidebar nav flex containers - blue accent */',
+            'div.StyledInlineChildren-sc-1dbwnk9-0.gDVtOg.Flex-sc-194ujhf-3.fCagsf {',
+            '  background-color: #1e88e5 !important;',
+            '  border-radius: 10px;',
+            '}',
+            '/* Hide misc promo element */',
+            'div.sc-b24365ad-0.jWrhwp {',
+            '  display: none !important;',
+            '}',
+            '/* Hide ALL CMS promotional banners */',
+            '[class*="sc-34f18914-0"],',
+            '[class*="sc-34f18914-1"],',
+            '[class*="sc-34f18914-2"],',
+            '[class*="sc-34f18914-4"],',
+            '[class*="sc-34f18914-5"] {',
+            '  display: none !important;',
+            '}',
+            '/* Hide carousel pagination dots */',
+            'div.Root-sc-nmoa4y-4.cAkoGG {',
+            '  display: none !important;',
+            '}',
             '#' + SCRIPT_ID + '-hdr-btns {',
             '  display: inline-flex; align-items: center; gap: 2px;',
             '}',
@@ -1031,7 +1991,13 @@
         ].join('\n'));
 
         features.forEach(function(f) {
-            if (getSetting(f.key)) {
+            if (f.custom) {
+                // Non-boolean features: check for non-'off' value
+                var val = getSetting(f.key);
+                if (val && val !== 'off') {
+                    try { f.init(); } catch(e) { console.error('[DD Enhanced] Init ' + f.key + ':', e); }
+                }
+            } else if (getSetting(f.key)) {
                 try { f.init(); } catch(e) { console.error('[DD Enhanced] Init ' + f.key + ':', e); }
             }
         });
