@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DoorDash Enhanced
 // @namespace    https://github.com/SysAdminDoc
-// @version      2.6.1
+// @version      2.7.0
 // @description  Comprehensive DoorDash enhancer: dark mode, ad/promo blocking, fee transparency, UI cleanup, keyboard shortcuts, and more.
 // @author       SysAdminDoc
 // @match        https://www.doordash.com/*
@@ -21,7 +21,7 @@
     'use strict';
 
     var SCRIPT_ID = 'dd-enhanced';
-    var VERSION   = '2.6.1';
+    var VERSION   = '2.7.0';
 
     var DEFAULT_SETTINGS = {
         darkMode:            true,
@@ -47,6 +47,29 @@
 
     function getSetting(key) { return GM_getValue(SCRIPT_ID + '_' + key, DEFAULT_SETTINGS[key]); }
     function setSetting(key, val) { GM_setValue(SCRIPT_ID + '_' + key, val); }
+
+    // =====================================================================
+    //  TRUSTED TYPES POLICY
+    //  Guard all innerHTML writes so the script works if DoorDash ships CSP
+    //  with a require-trusted-types-for 'script' directive.
+    // =====================================================================
+    var _ttPolicy = null;
+    if (typeof window.trustedTypes !== 'undefined' && window.trustedTypes.createPolicy) {
+        try {
+            _ttPolicy = window.trustedTypes.createPolicy('doordash-enhanced', {
+                createHTML: function(s) { return s; },
+                createScript: function(s) { return s; },
+                createScriptURL: function(s) { return s; },
+            });
+        } catch(e) {
+            // Policy name may already exist or CSP blocks creation; fall through
+            console.warn('[DD Enhanced] Trusted Types policy creation failed:', e);
+        }
+    }
+    /** Wrap a raw HTML string for safe innerHTML assignment. */
+    function trustedHTML(rawHTML) {
+        return _ttPolicy ? _ttPolicy.createHTML(rawHTML) : rawHTML;
+    }
 
     // =====================================================================
     //  FEATURES
@@ -185,15 +208,19 @@
                     }
                 }
 
-                // Run immediately + on mutations + periodic
+                // Run immediately + on mutations (batched via requestIdleCallback)
                 sweep();
-                self._obs = safeObserver(function() { sweep(); });
-                self._timer = setInterval(sweep, 1500);
+                var _sweepScheduled = false;
+                self._obs = safeObserver(function() {
+                    if (_sweepScheduled) return;
+                    _sweepScheduled = true;
+                    var ric = window.requestIdleCallback || function(cb) { setTimeout(cb, 80); };
+                    ric(function() { _sweepScheduled = false; sweep(); });
+                });
             },
             destroy: function() {
                 removeStyle(this.styleId);
                 if (this._obs) this._obs.disconnect();
-                if (this._timer) clearInterval(this._timer);
                 document.querySelectorAll('.' + SCRIPT_ID + '-sponsored-hidden').forEach(function(el) {
                     el.classList.remove(SCRIPT_ID + '-sponsored-hidden');
                 });
@@ -317,21 +344,18 @@
             destroy: function() { removeStyle(this.styleId); }
         },
 
-        // -- KEYBOARD SHORTCUTS -------------------------------------------
+        // -- KEYBOARD SHORTCUTS (settings panel only, via Escape key) ------
         {
             key: 'keyboardShortcuts',
             name: 'Keyboard Shortcuts',
             group: 'Utilities',
-            desc: 'Alt+S: search, Alt+C: cart, Alt+H: home, Alt+O: orders, Alt+P: settings',
+            desc: 'Escape closes settings panel; all actions available via gear icon and Tampermonkey menu',
             init: function() {
                 this._handler = function(e) {
-                    if (!e.altKey || e.target.matches('input, textarea, select')) return;
-                    var k = e.key.toLowerCase();
-                    if (k === 's') { e.preventDefault(); var el = document.querySelector('[data-anchor-id="HeaderSearchInputField"]'); if (el) el.focus(); }
-                    else if (k === 'c') { e.preventDefault(); var el2 = document.querySelector('[data-testid="OrderCartIconButton"], a[href*="/cart"]'); if (el2) el2.click(); }
-                    else if (k === 'h') { e.preventDefault(); window.location.href = '/home'; }
-                    else if (k === 'o') { e.preventDefault(); window.location.href = '/orders'; }
-                    else if (k === 'p') { e.preventDefault(); toggleSettingsPanel(); }
+                    if (e.key === 'Escape') {
+                        var panel = document.getElementById(SCRIPT_ID + '-settings');
+                        if (panel) { toggleSettingsPanel(); e.preventDefault(); }
+                    }
                 };
                 document.addEventListener('keydown', this._handler);
             },
@@ -1565,7 +1589,7 @@
             });
             document.body.appendChild(calc);
         }
-        calc.innerHTML =
+        calc.innerHTML = trustedHTML(
             '<div style="font-weight:700;font-size:14px;margin-bottom:8px">Estimated Total</div>' +
             '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Subtotal</span><span>$' + subtotal.toFixed(2) + '</span></div>' +
             '<div style="display:flex;justify-content:space-between;padding:4px 0;color:#ff5028;background:' + fb + ';margin:0 -16px;padding:4px 16px"><span>~Service Fee (15%)</span><span>$' + sf.toFixed(2) + '</span></div>' +
@@ -1573,7 +1597,7 @@
             '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>~Tax (10%)</span><span>$' + tx.toFixed(2) + '</span></div>' +
             '<div style="height:1px;background:' + bc + ';margin:8px 0"></div>' +
             '<div style="display:flex;justify-content:space-between;padding:4px 0;font-weight:700;font-size:15px"><span>Grand Total</span><span>$' + total.toFixed(2) + '</span></div>' +
-            '<div style="font-size:10px;color:#888;margin-top:8px;text-align:center">Estimates only. Actual fees may vary.</div>';
+            '<div style="font-size:10px;color:#888;margin-top:8px;text-align:center">Estimates only. Actual fees may vary.</div>');
     }
 
 
@@ -1618,9 +1642,15 @@
     function setupSPAHandler() {
         var origPush = history.pushState;
         var origReplace = history.replaceState;
-        history.pushState = function() { origPush.apply(this, arguments); window.dispatchEvent(new Event('dd-nav')); };
-        history.replaceState = function() { origReplace.apply(this, arguments); window.dispatchEvent(new Event('dd-nav')); };
-        window.addEventListener('popstate', function() { window.dispatchEvent(new Event('dd-nav')); });
+        var _navDebounce = null;
+        function fireNav() {
+            // Debounce to 50ms to avoid double-mount on SPA nav
+            if (_navDebounce) clearTimeout(_navDebounce);
+            _navDebounce = setTimeout(function() { window.dispatchEvent(new Event('dd-nav')); }, 50);
+        }
+        history.pushState = function() { origPush.apply(this, arguments); fireNav(); };
+        history.replaceState = function() { origReplace.apply(this, arguments); fireNav(); };
+        window.addEventListener('popstate', fireNav);
         window.addEventListener('dd-nav', function() {
             _tipApplied = false; // Reset so tip can re-apply on new checkout
             setTimeout(function() {
@@ -1683,19 +1713,20 @@
         var darkBtn = document.createElement('button');
         darkBtn.title = 'Toggle Dark Mode';
         darkBtn.setAttribute('aria-label', 'Toggle Dark Mode');
-        darkBtn.innerHTML = MOON_SVG;
+        darkBtn.innerHTML = trustedHTML(MOON_SVG);
         darkBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             var cur = getSetting('darkMode');
             setSetting('darkMode', !cur);
             var f = features.find(function(feat) { return feat.key === 'darkMode'; });
-            if (cur) f.destroy(); else f.init();
+            try { f.destroy(); } catch(ex) { /* silent */ }
+            if (!cur) f.init();
         });
 
         var settingsBtn = document.createElement('button');
-        settingsBtn.title = 'Settings (Alt+P)';
+        settingsBtn.title = 'DoorDash Enhanced Settings';
         settingsBtn.setAttribute('aria-label', 'DoorDash Enhanced Settings');
-        settingsBtn.innerHTML = GEAR_SVG;
+        settingsBtn.innerHTML = trustedHTML(GEAR_SVG);
         settingsBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             toggleSettingsPanel();
@@ -1761,7 +1792,7 @@
 
         var hdr = document.createElement('div');
         Object.assign(hdr.style, { padding: '20px 24px', borderBottom: '1px solid ' + borderC, display: 'flex', justifyContent: 'space-between', alignItems: 'center' });
-        hdr.innerHTML = '<div><div style="font-size:18px;font-weight:700">DoorDash Enhanced</div><div style="font-size:12px;color:#888;margin-top:2px">v' + VERSION + '</div></div>';
+        hdr.innerHTML = trustedHTML('<div><div style="font-size:18px;font-weight:700">DoorDash Enhanced</div><div style="font-size:12px;color:#888;margin-top:2px">v' + VERSION + '</div></div>');
         var closeBtn = document.createElement('button');
         Object.assign(closeBtn.style, { background: 'transparent', border: 'none', color: fg, cursor: 'pointer', fontSize: '24px', padding: '4px 8px', lineHeight: '1' });
         closeBtn.textContent = '\u00D7';
@@ -1802,7 +1833,7 @@
 
                 var label = document.createElement('div');
                 label.style.flex = '1';
-                label.innerHTML = '<div style="font-size:14px;font-weight:500">' + f.name + '</div><div style="font-size:11px;color:#888;margin-top:2px">' + f.desc + '</div>';
+                label.innerHTML = trustedHTML('<div style="font-size:14px;font-weight:500">' + f.name + '</div><div style="font-size:11px;color:#888;margin-top:2px">' + f.desc + '</div>');
 
                 // --- Custom UI for tipDefault ---
                 if (f.key === 'tipDefault') {
@@ -1887,15 +1918,17 @@
                 var toggle = document.createElement('div');
                 toggle.style.cssText = 'flex-shrink:0;margin-left:12px';
                 function renderToggle(on) {
-                    toggle.innerHTML = '<div style="width:44px;height:24px;border-radius:12px;background:' + (on ? '#ff3008' : '#555') + ';position:relative;transition:background 0.2s">' +
-                        '<div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (on ? '22px' : '2px') + ';transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div></div>';
+                    toggle.innerHTML = trustedHTML('<div style="width:44px;height:24px;border-radius:12px;background:' + (on ? '#ff3008' : '#555') + ';position:relative;transition:background 0.2s">' +
+                        '<div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (on ? '22px' : '2px') + ';transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div></div>');
                 }
                 renderToggle(getSetting(f.key));
                 row.addEventListener('click', function() {
                     var cur = getSetting(f.key);
                     setSetting(f.key, !cur);
                     renderToggle(!cur);
-                    try { if (!cur) f.init(); else f.destroy(); } catch(e) { console.error('[DD Enhanced] ' + f.key + ':', e); }
+                    // Idempotent: always destroy first to avoid orphan observers/CSS
+                    try { f.destroy(); } catch(e) { /* silent */ }
+                    if (!cur) { try { f.init(); } catch(e) { console.error('[DD Enhanced] ' + f.key + ':', e); } }
                 });
                 row.appendChild(label);
                 row.appendChild(toggle);
@@ -2012,8 +2045,18 @@
             var f = features.find(function(feat) { return feat.key === 'darkMode'; });
             if (cur) f.destroy(); else f.init();
         });
+        GM_registerMenuCommand('Focus Search', function() {
+            var el = document.querySelector('[data-anchor-id="HeaderSearchInputField"]');
+            if (el) el.focus();
+        });
+        GM_registerMenuCommand('Open Cart', function() {
+            var el = document.querySelector('[data-testid="OrderCartIconButton"], a[href*="/cart"]');
+            if (el) el.click();
+        });
+        GM_registerMenuCommand('Go to Home', function() { window.location.href = '/home'; });
+        GM_registerMenuCommand('Go to Orders', function() { window.location.href = '/orders'; });
 
-        console.log('[DoorDash Enhanced] v' + VERSION + ' loaded. Alt+P for settings.');
+        console.log('[DoorDash Enhanced] v' + VERSION + ' loaded. Click the gear icon or use Tampermonkey menu for settings.');
     }
 
     init();
