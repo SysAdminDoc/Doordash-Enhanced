@@ -43,6 +43,9 @@
         tipDefault:          'off',  // 'off', 'remember', or dollar amount like '5.00'
         checkoutFlair:       true,
         storePolish:         true,
+        theme:               'mocha', // 'mocha', 'frappe', 'macchiato', 'latte'
+        cardDensity:         'comfortable', // 'comfortable', 'compact', 'dense'
+        maxDeliveryFee:      'off', // 'off' or dollar amount like '5.00'
     };
 
     function getSetting(key) { return GM_getValue(SCRIPT_ID + '_' + key, DEFAULT_SETTINGS[key]); }
@@ -448,6 +451,74 @@
                 applyFlairAttributes(document.body);
             },
             destroy: function() { removeStyle(this.styleId); if (this._obs) this._obs.disconnect(); }
+        },
+
+        // -- THEME PICKER (Catppuccin) ------------------------------------
+        {
+            key: 'theme',
+            name: 'Theme',
+            group: 'Appearance',
+            desc: 'Color palette: Mocha (dark), Frappé, Macchiato, or Latte (light)',
+            custom: true,
+            styleId: SCRIPT_ID + '-catppuccin',
+            init: function() { injectStyle(this.styleId, catppuccinThemeCSS(getSetting('theme') || 'mocha')); },
+            destroy: function() { removeStyle(this.styleId); }
+        },
+
+        // -- CARD DENSITY SLIDER ------------------------------------------
+        {
+            key: 'cardDensity',
+            name: 'Restaurant Card Density',
+            group: 'Appearance',
+            desc: 'Comfortable, compact, or dense card layout',
+            custom: true,
+            styleId: SCRIPT_ID + '-density',
+            init: function() { injectStyle(this.styleId, cardDensityCSS(getSetting('cardDensity') || 'comfortable')); },
+            destroy: function() { removeStyle(this.styleId); }
+        },
+
+        // -- MAX DELIVERY FEE FILTER --------------------------------------
+        {
+            key: 'maxDeliveryFee',
+            name: 'Hide High Delivery Fees',
+            group: 'Utilities',
+            desc: 'Hide restaurants with delivery fees above your threshold',
+            custom: true,
+            init: function() {
+                var self = this;
+                function filterByFee() {
+                    var max = getSetting('maxDeliveryFee');
+                    if (!max || max === 'off') return;
+                    var maxVal = parseFloat(max);
+                    if (isNaN(maxVal)) return;
+                    document.querySelectorAll('[data-anchor-id="StoreCard"], [data-testid="card.store"]').forEach(function(card) {
+                        if (card.dataset.ddFeeFiltered === 'checked') return;
+                        card.dataset.ddFeeFiltered = 'checked';
+                        var text = card.textContent || '';
+                        var feeMatch = text.match(/\$(\d+\.?\d*)\s*delivery\s*fee/i);
+                        if (feeMatch) {
+                            var fee = parseFloat(feeMatch[1]);
+                            if (fee > maxVal) {
+                                card.style.setProperty('display', 'none', 'important');
+                                card.dataset.ddFeeHidden = 'true';
+                            }
+                        }
+                    });
+                }
+                filterByFee();
+                self._obs = safeObserver(function() {
+                    var ric = window.requestIdleCallback || function(cb) { setTimeout(cb, 80); };
+                    ric(filterByFee);
+                });
+            },
+            destroy: function() {
+                if (this._obs) this._obs.disconnect();
+                document.querySelectorAll('[data-dd-fee-hidden="true"]').forEach(function(card) {
+                    card.style.removeProperty('display');
+                    delete card.dataset.ddFeeHidden;
+                    delete card.dataset.ddFeeFiltered;
+                });
+            }
         },
     ];
 
@@ -1515,6 +1586,118 @@
 
 
     // =====================================================================
+    //  CATPPUCCIN THEME PALETTES
+    //  https://github.com/catppuccin/catppuccin
+    // =====================================================================
+    var CATPPUCCIN = {
+        mocha: {
+            base: '#1e1e2e', mantle: '#181825', crust: '#11111b',
+            surface0: '#313244', surface1: '#45475a', surface2: '#585b70',
+            overlay0: '#6c7086', overlay1: '#7f849c', overlay2: '#9399b2',
+            text: '#cdd6f4', subtext0: '#a6adc8', subtext1: '#bac2de',
+            red: '#f38ba8', green: '#a6e3a1', blue: '#89b4fa',
+            yellow: '#f9e2af', peach: '#fab387', mauve: '#cba6f7',
+            teal: '#94e2d5', lavender: '#b4befe', flamingo: '#f2cdcd',
+            rosewater: '#f5e0dc', sapphire: '#74c7ec', sky: '#89dceb',
+            maroon: '#eba0ac', pink: '#f5c2e7',
+        },
+        frappe: {
+            base: '#303446', mantle: '#292c3c', crust: '#232634',
+            surface0: '#414559', surface1: '#51576d', surface2: '#626880',
+            overlay0: '#737994', overlay1: '#838ba7', overlay2: '#949cbb',
+            text: '#c6d0f5', subtext0: '#a5adce', subtext1: '#b5bfe2',
+            red: '#e78284', green: '#a6d189', blue: '#8caaee',
+            yellow: '#e5c890', peach: '#ef9f76', mauve: '#ca9ee6',
+            teal: '#81c8be', lavender: '#babbf1', flamingo: '#eebebe',
+            rosewater: '#f2d5cf', sapphire: '#85c1dc', sky: '#99d1db',
+            maroon: '#ea999c', pink: '#f4b8e4',
+        },
+        macchiato: {
+            base: '#24273a', mantle: '#1e2030', crust: '#181926',
+            surface0: '#363a4f', surface1: '#494d64', surface2: '#5b6078',
+            overlay0: '#6e738d', overlay1: '#8087a2', overlay2: '#939ab7',
+            text: '#cad3f5', subtext0: '#a5adcb', subtext1: '#b8c0e0',
+            red: '#ed8796', green: '#a6da95', blue: '#8aadf4',
+            yellow: '#eed49f', peach: '#f5a97f', mauve: '#c6a0f6',
+            teal: '#8bd5ca', lavender: '#b7bdf8', flamingo: '#f0c6c6',
+            rosewater: '#f4dbd6', sapphire: '#7dc4e4', sky: '#91d7e3',
+            maroon: '#ee99a0', pink: '#f5bde6',
+        },
+        latte: {
+            base: '#eff1f5', mantle: '#e6e9ef', crust: '#dce0e8',
+            surface0: '#ccd0da', surface1: '#bcc0cc', surface2: '#acb0be',
+            overlay0: '#9ca0b0', overlay1: '#8c8fa1', overlay2: '#7c7f93',
+            text: '#4c4f69', subtext0: '#6c6f85', subtext1: '#5c5f77',
+            red: '#d20f39', green: '#40a02b', blue: '#1e66f5',
+            yellow: '#df8e1d', peach: '#fe640b', mauve: '#8839ef',
+            teal: '#179299', lavender: '#7287fd', flamingo: '#dd7878',
+            rosewater: '#dc8a78', sapphire: '#209fb5', sky: '#04a5e5',
+            maroon: '#e64553', pink: '#ea76cb',
+        },
+    };
+
+    function catppuccinThemeCSS(themeName) {
+        var t = CATPPUCCIN[themeName] || CATPPUCCIN.mocha;
+        var isLight = themeName === 'latte';
+        return [
+        '.prism-theme.prism-theme,',
+        '[data-testid="ThemingWrapper"][data-testid="ThemingWrapper"] {',
+        '  --base-color-white:      ' + t.base + 'ff !important;',
+        '  --base-color-neutral-0:  ' + t.mantle + 'ff !important;',
+        '  --base-color-neutral-5:  ' + t.crust + 'ff !important;',
+        '  --base-color-neutral-10: ' + t.surface0 + 'ff !important;',
+        '  --base-color-neutral-20: ' + t.surface1 + 'ff !important;',
+        '  --base-color-neutral-30: ' + t.surface2 + 'ff !important;',
+        '  --base-color-neutral-40: ' + t.overlay0 + 'ff !important;',
+        '  --base-color-neutral-50: ' + t.overlay1 + 'ff !important;',
+        '  --base-color-neutral-60: ' + t.overlay2 + 'ff !important;',
+        '  --base-color-neutral-70: ' + t.subtext0 + 'ff !important;',
+        '  --base-color-neutral-80: ' + t.subtext1 + 'ff !important;',
+        '  --base-color-neutral-90: ' + t.text + 'ff !important;',
+        '  --base-color-neutral-95: ' + t.text + 'ff !important;',
+        '  --base-color-neutral-100: ' + t.text + 'ff !important;',
+        '  --base-color-black:      ' + t.text + 'ff !important;',
+        '  --usage-color-border-default: ' + t.surface0 + 'ff !important;',
+        '  --usage-color-border-focused: ' + t.lavender + 'a8 !important;',
+        '  color-scheme: ' + (isLight ? 'light' : 'dark') + ' !important;',
+        '}',
+        ].join('\n');
+    }
+
+
+    // =====================================================================
+    //  CARD DENSITY
+    // =====================================================================
+    function cardDensityCSS(density) {
+        if (density === 'compact') {
+            return [
+            '[data-anchor-id="StoreCard"], [data-testid="card.store"] {',
+            '  padding: 8px !important;',
+            '}',
+            '[data-anchor-id="StoreCard"] img, [data-testid="card.store"] img {',
+            '  max-height: 120px !important; object-fit: cover !important;',
+            '}',
+            ].join('\n');
+        }
+        if (density === 'dense') {
+            return [
+            '[data-anchor-id="StoreCard"], [data-testid="card.store"] {',
+            '  padding: 4px !important;',
+            '}',
+            '[data-anchor-id="StoreCard"] img, [data-testid="card.store"] img {',
+            '  max-height: 80px !important; object-fit: cover !important;',
+            '}',
+            '[data-anchor-id="StoreCard"] [class*="Text-sc-"]:not(:first-child),',
+            '[data-testid="card.store"] [class*="Text-sc-"]:not(:first-child) {',
+            '  font-size: 12px !important; line-height: 1.3 !important;',
+            '}',
+            ].join('\n');
+        }
+        return ''; // comfortable = default, no overrides
+    }
+
+
+    // =====================================================================
     //  SEARCH HISTORY
     // =====================================================================
     function showSearchHistory(inputEl, history) {
@@ -1914,6 +2097,123 @@
                     return;
                 }
 
+                // --- Custom UI for theme picker ---
+                if (f.key === 'theme') {
+                    var themeVal = getSetting('theme') || 'mocha';
+                    var themeSel = document.createElement('select');
+                    Object.assign(themeSel.style, {
+                        background: isDark ? '#222230' : '#f0f0f0', color: fg,
+                        border: '1px solid ' + borderC, borderRadius: '8px',
+                        padding: '6px 8px', fontSize: '13px', cursor: 'pointer',
+                        outline: 'none', flexShrink: '0', marginLeft: '12px',
+                    });
+                    [
+                        { val: 'mocha', text: 'Mocha (dark)' },
+                        { val: 'frappe', text: 'Frappé' },
+                        { val: 'macchiato', text: 'Macchiato' },
+                        { val: 'latte', text: 'Latte (light)' },
+                    ].forEach(function(o) {
+                        var opt = document.createElement('option');
+                        opt.value = o.val; opt.textContent = o.text;
+                        if (o.val === themeVal) opt.selected = true;
+                        themeSel.appendChild(opt);
+                    });
+                    themeSel.addEventListener('change', function() {
+                        setSetting('theme', themeSel.value);
+                        try { f.destroy(); } catch(e) { /* silent */ }
+                        f.init();
+                    });
+                    row.appendChild(label);
+                    row.appendChild(themeSel);
+                    box.appendChild(row);
+                    return;
+                }
+
+                // --- Custom UI for card density ---
+                if (f.key === 'cardDensity') {
+                    var densityVal = getSetting('cardDensity') || 'comfortable';
+                    var densitySel = document.createElement('select');
+                    Object.assign(densitySel.style, {
+                        background: isDark ? '#222230' : '#f0f0f0', color: fg,
+                        border: '1px solid ' + borderC, borderRadius: '8px',
+                        padding: '6px 8px', fontSize: '13px', cursor: 'pointer',
+                        outline: 'none', flexShrink: '0', marginLeft: '12px',
+                    });
+                    [
+                        { val: 'comfortable', text: 'Comfortable' },
+                        { val: 'compact', text: 'Compact' },
+                        { val: 'dense', text: 'Dense' },
+                    ].forEach(function(o) {
+                        var opt = document.createElement('option');
+                        opt.value = o.val; opt.textContent = o.text;
+                        if (o.val === densityVal) opt.selected = true;
+                        densitySel.appendChild(opt);
+                    });
+                    densitySel.addEventListener('change', function() {
+                        setSetting('cardDensity', densitySel.value);
+                        try { f.destroy(); } catch(e) { /* silent */ }
+                        f.init();
+                    });
+                    row.appendChild(label);
+                    row.appendChild(densitySel);
+                    box.appendChild(row);
+                    return;
+                }
+
+                // --- Custom UI for max delivery fee filter ---
+                if (f.key === 'maxDeliveryFee') {
+                    var feeVal = getSetting('maxDeliveryFee') || 'off';
+                    var feeCtrl = document.createElement('div');
+                    feeCtrl.style.cssText = 'flex-shrink:0;margin-left:12px;display:flex;align-items:center;gap:6px';
+                    var feeSel = document.createElement('select');
+                    Object.assign(feeSel.style, {
+                        background: isDark ? '#222230' : '#f0f0f0', color: fg,
+                        border: '1px solid ' + borderC, borderRadius: '8px',
+                        padding: '6px 8px', fontSize: '13px', cursor: 'pointer', outline: 'none',
+                    });
+                    [
+                        { val: 'off', text: 'Off' },
+                        { val: 'custom', text: 'Max $' },
+                    ].forEach(function(o) {
+                        var opt = document.createElement('option');
+                        opt.value = o.val; opt.textContent = o.text;
+                        if (o.val === 'off' && feeVal === 'off') opt.selected = true;
+                        if (o.val === 'custom' && feeVal !== 'off') opt.selected = true;
+                        feeSel.appendChild(opt);
+                    });
+                    var feeInput = document.createElement('input');
+                    Object.assign(feeInput.style, {
+                        width: '50px', background: isDark ? '#222230' : '#f0f0f0', color: fg,
+                        border: '1px solid ' + borderC, borderRadius: '8px',
+                        padding: '6px 8px', fontSize: '13px', outline: 'none',
+                    });
+                    feeInput.type = 'text'; feeInput.placeholder = '5.00';
+                    if (feeVal !== 'off') feeInput.value = feeVal;
+                    function toggleFeeInput() { feeInput.style.display = feeSel.value === 'custom' ? 'block' : 'none'; }
+                    toggleFeeInput();
+                    function saveFeeSetting() {
+                        var v = feeSel.value;
+                        if (v === 'custom') {
+                            var amt = feeInput.value.replace(/[^0-9.]/g, '');
+                            if (!amt || isNaN(parseFloat(amt))) amt = '5';
+                            v = parseFloat(amt).toFixed(2);
+                            feeInput.value = v;
+                        }
+                        setSetting('maxDeliveryFee', v);
+                        try { f.destroy(); } catch(e) { /* silent */ }
+                        if (v !== 'off') { try { f.init(); } catch(e) {} }
+                    }
+                    feeSel.addEventListener('change', function() { toggleFeeInput(); saveFeeSetting(); });
+                    feeInput.addEventListener('change', saveFeeSetting);
+                    feeInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') saveFeeSetting(); });
+                    feeCtrl.appendChild(feeSel);
+                    feeCtrl.appendChild(feeInput);
+                    row.appendChild(label);
+                    row.appendChild(feeCtrl);
+                    box.appendChild(row);
+                    return;
+                }
+
                 // --- Standard boolean toggle ---
                 var toggle = document.createElement('div');
                 toggle.style.cssText = 'flex-shrink:0;margin-left:12px';
@@ -1937,6 +2237,63 @@
             groupEl.appendChild(box);
             content.appendChild(groupEl);
         });
+
+        // --- Export / Import Buttons ---
+        var eiWrap = document.createElement('div');
+        eiWrap.style.cssText = 'display:flex;gap:8px;margin:8px 0';
+
+        var exportBtn = document.createElement('button');
+        Object.assign(exportBtn.style, {
+            flex: '1', padding: '10px', background: 'transparent',
+            border: '1px solid ' + borderC, borderRadius: '8px',
+            color: fg, cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+        });
+        exportBtn.textContent = 'Export Settings';
+        exportBtn.addEventListener('click', function() {
+            var data = {};
+            features.forEach(function(f) { data[f.key] = getSetting(f.key); });
+            var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'doordash-enhanced-settings.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        });
+
+        var importBtn = document.createElement('button');
+        Object.assign(importBtn.style, {
+            flex: '1', padding: '10px', background: 'transparent',
+            border: '1px solid ' + borderC, borderRadius: '8px',
+            color: fg, cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+        });
+        importBtn.textContent = 'Import Settings';
+        importBtn.addEventListener('click', function() {
+            var input = document.createElement('input');
+            input.type = 'file'; input.accept = '.json';
+            input.addEventListener('change', function() {
+                if (!input.files.length) return;
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        var data = JSON.parse(e.target.result);
+                        features.forEach(function(f) { try { f.destroy(); } catch(ex) { /* silent */ } });
+                        Object.keys(data).forEach(function(key) {
+                            if (key in DEFAULT_SETTINGS) setSetting(key, data[key]);
+                        });
+                        panel.remove(); var bd4 = document.getElementById(SCRIPT_ID + '-backdrop'); if (bd4) bd4.remove();
+                        location.reload();
+                    } catch(err) {
+                        alert('Invalid settings file: ' + err.message);
+                    }
+                };
+                reader.readAsText(input.files[0]);
+            });
+            input.click();
+        });
+
+        eiWrap.appendChild(exportBtn);
+        eiWrap.appendChild(importBtn);
+        content.appendChild(eiWrap);
 
         var resetBtn = document.createElement('button');
         Object.assign(resetBtn.style, {
