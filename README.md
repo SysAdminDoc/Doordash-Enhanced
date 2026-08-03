@@ -48,6 +48,7 @@ To access settings, press **Alt+P** or click the gear icon in the DoorDash heade
 |---------|-------------|---------|
 | Fee Highlighter | Color-codes fees on the checkout page (green for subtotal, red for fees, blue for delivery) so you can instantly see the cost breakdown | **On** |
 | Auto-Expand Fee Details | Automatically expands collapsed fee breakdowns on the checkout page | **On** |
+| Price per Portion | Estimates a per-person price for group-order items that show serving counts | **On** |
 
 ### Checkout
 

@@ -58,6 +58,7 @@
         priceIncreaseDetector: true,
         reorderLast:         true,
         orderHistory:        true,
+        portionCalculator:   true,
         stickyOrderSummary:  true,
         feeDropIndicator:    true,
         syncUrl:             '',
@@ -675,6 +676,24 @@
                 if (toolbar) toolbar.remove();
                 var dashboard = document.getElementById(SCRIPT_ID + '-order-dashboard');
                 if (dashboard) dashboard.remove();
+            }
+        },
+
+        // -- GROUP ORDER PORTION PRICE -------------------------------------
+        {
+            key: 'portionCalculator',
+            name: 'Price per Portion',
+            group: 'Transparency',
+            desc: 'Estimate the per-person price on group-order items',
+            entryMatcher: isGroupOrderPage,
+            init: function() {
+                applyPortionPrices(document.body);
+                this._obs = safeObserver(function(node) { applyPortionPrices(node); });
+            },
+            destroy: function() {
+                if (this._obs) this._obs.disconnect();
+                document.querySelectorAll('.' + SCRIPT_ID + '-portion-price').forEach(function(el) { el.remove(); });
+                document.querySelectorAll('[data-' + SCRIPT_ID + '-portion-priced]').forEach(function(el) { el.removeAttribute('data-' + SCRIPT_ID + '-portion-priced'); });
             }
         },
 
@@ -2068,6 +2087,34 @@
         });
     }
 
+    function portionCards(root) {
+        var scope = root && root.querySelectorAll ? root : document;
+        return scope.querySelectorAll('[data-testid="GenericItemCard"], [data-anchor-id="StoreCard"], [data-testid*="GroupOrder" i], [role="listitem"]');
+    }
+
+    function applyPortionPrices(root) {
+        portionCards(root).forEach(function(card) {
+            if (card.getAttribute('data-' + SCRIPT_ID + '-portion-priced')) return;
+            var text = card.textContent || '';
+            var price = parseMoney(text);
+            if (!price) return;
+            var serves = text.match(/\b(?:serves?|feeds?|makes?)\s*(\d+)(?:\s*[-–]\s*(\d+))?\s*(?:people|persons|portions|servings)?/i) ||
+                         text.match(/\b(\d+)(?:\s*[-–]\s*(\d+))?\s*(?:people|persons|portions|servings)\b/i);
+            if (!serves) return;
+            var low = parseInt(serves[1], 10);
+            var high = serves[2] ? parseInt(serves[2], 10) : low;
+            if (!low || !high || low > high) return;
+            var unitText = low === high
+                ? '$' + (price / low).toFixed(2) + '/portion'
+                : '$' + (price / high).toFixed(2) + '–$' + (price / low).toFixed(2) + '/portion';
+            var priceNode = Array.prototype.find.call(card.querySelectorAll('*'), function(el) {
+                return /\$\d+(?:\.\d{1,2})?/.test(el.textContent || '') && el.children.length === 0;
+            }) || card;
+            appendInlineBadge(priceNode.parentElement || card, SCRIPT_ID + '-portion-price', unitText);
+            card.setAttribute('data-' + SCRIPT_ID + '-portion-priced', 'true');
+        });
+    }
+
     function allergenTerms() {
         return String(getSetting('allergenFilter') || '')
             .split(',')
@@ -2525,6 +2572,7 @@
         return !isStorePage() && /^(?:\/$|\/home(?:\/|$)|\/consumer(?:\/|$)|\/search(?:\/|$))/i.test(location.pathname);
     }
     function isOrdersPage() { return /\/(?:orders?|order-history)(?:\/|$)/i.test(location.pathname); }
+    function isGroupOrderPage() { return /group[\-_ ]?order|group[\-_ ]?ordering/i.test(location.pathname + location.search); }
     function siteVariant() {
         var host = location.hostname.toLowerCase();
         if (host.endsWith('doordash.ca')) return 'ca';
@@ -3278,7 +3326,7 @@
         setAttributeIfChanged(document.documentElement, 'data-' + SCRIPT_ID + '-site', siteVariant());
         injectStyle(SCRIPT_ID + '-core', [
             '/* Custom overrides */',
-            '.' + SCRIPT_ID + '-allergen-badge, .' + SCRIPT_ID + '-unit-price, .' + SCRIPT_ID + '-price-increase, .' + SCRIPT_ID + '-fee-baseline, .' + SCRIPT_ID + '-fee-drop {',
+            '.' + SCRIPT_ID + '-allergen-badge, .' + SCRIPT_ID + '-unit-price, .' + SCRIPT_ID + '-portion-price, .' + SCRIPT_ID + '-price-increase, .' + SCRIPT_ID + '-fee-baseline, .' + SCRIPT_ID + '-fee-drop {',
             '  display: inline-flex;',
             '  align-items: center;',
             '  margin-left: 6px;',
@@ -3290,6 +3338,7 @@
             '}',
             '.' + SCRIPT_ID + '-allergen-badge { background: rgba(255, 80, 40, 0.14); color: #ff5028; border: 1px solid rgba(255, 80, 40, 0.28); }',
             '.' + SCRIPT_ID + '-unit-price { background: rgba(30, 136, 229, 0.14); color: #4aa3ff; border: 1px solid rgba(30, 136, 229, 0.28); }',
+            '.' + SCRIPT_ID + '-portion-price { background: rgba(166, 120, 220, 0.16); color: #b98cff; border: 1px solid rgba(166, 120, 220, 0.32); }',
             '.' + SCRIPT_ID + '-price-increase { background: rgba(255, 80, 40, 0.16); color: #ff5028; border: 1px solid rgba(255, 80, 40, 0.32); }',
             '.' + SCRIPT_ID + '-fee-baseline { background: rgba(137, 180, 250, 0.16); color: #89b4fa; border: 1px solid rgba(137, 180, 250, 0.32); }',
             '.' + SCRIPT_ID + '-fee-drop { background: rgba(166, 227, 161, 0.16); color: #5ac85a; border: 1px solid rgba(166, 227, 161, 0.32); }',
