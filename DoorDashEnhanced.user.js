@@ -12,6 +12,7 @@
 // @match        https://doordash.com.au/*
 // @match        https://www.dash.com/*
 // @match        https://dash.com/*
+// @match        https://dasher.doordash.com/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
@@ -881,6 +882,16 @@
         '.mapboxgl-marker, .mapboxgl-ctrl, .mapboxgl-ctrl-logo, .mapboxgl-popup,',
         '[data-testid="MarkerContainer"], [data-testid="ZoomControl"] {',
         '  filter: invert(1) hue-rotate(180deg) !important;',
+        '}',
+        'html[data-' + SCRIPT_ID + '-site="dasher"] [data-testid="app"],',
+        'html[data-' + SCRIPT_ID + '-site="dasher"] #root,',
+        'html[data-' + SCRIPT_ID + '-site="dasher"] [role="main"] {',
+        '  background-color: #111118 !important; color: #e8e8f0 !important;',
+        '}',
+        'html[data-' + SCRIPT_ID + '-site="dasher"] input,',
+        'html[data-' + SCRIPT_ID + '-site="dasher"] textarea,',
+        'html[data-' + SCRIPT_ID + '-site="dasher"] [role="dialog"] {',
+        '  background-color: #1a1a22 !important; color: #e8e8f0 !important; border-color: #3a3a45 !important;',
         '}',
         ].join('\n');
     }
@@ -2664,6 +2675,7 @@
     function isGroupOrderPage() { return /group[\-_ ]?order|group[\-_ ]?ordering/i.test(location.pathname + location.search); }
     function siteVariant() {
         var host = location.hostname.toLowerCase();
+        if (host === 'dasher.doordash.com') return 'dasher';
         if (host.endsWith('doordash.ca')) return 'ca';
         if (host.endsWith('doordash.com.au')) return 'au';
         if (host.endsWith('dash.com')) return 'dash';

@@ -7,6 +7,8 @@
 
 > A comprehensive userscript that transforms the DoorDash experience with dark mode, ad blocking, fee transparency, checkout automation, and polished UI enhancements — all togglable from a built-in settings panel.
 
+The Prism-token dark theme also covers the DoorDash Dasher web view when the userscript is enabled there.
+
 <!-- Add a screenshot here: -->
 <!-- ![Screenshot](screenshot.png) -->
 
