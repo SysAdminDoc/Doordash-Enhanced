@@ -81,6 +81,8 @@ Users who only need cosmetic blocking can subscribe to the standalone [DoorDash 
 | Search History | Remembers previous searches and provides autocomplete suggestions | **On** |
 | Order History Log | Locally remembers visible Orders-page entries and exports CSV/JSON with a spending summary | **On** |
 
+The optional **Settings Sync URL** control accepts a user-owned raw `gist.githubusercontent.com` JSON URL and pulls settings only when configured or when you click **Pull**. There is no default endpoint and no token is stored by the script.
+
 ### UI Cleanup
 
 | Feature | Description | Default |
