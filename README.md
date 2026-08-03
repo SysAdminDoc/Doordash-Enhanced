@@ -54,6 +54,8 @@ Then open `chrome://extensions`, enable **Developer mode**, and choose **Load un
 | Block Popups & Overlays | Auto-closes promotional modals, sheets, and overlay dialogs | **On** |
 | Hide Sponsored Listings | Removes sponsored store cards on the homepage, sponsored items in retail stores, and entire "Sponsored" carousels — uses a TreeWalker text-node approach that doesn't rely on fragile CSS class hashes | **On** |
 
+Users who only need cosmetic blocking can subscribe to the standalone [DoorDash Enhanced filter list](https://github.com/SysAdminDoc/Doordash-Enhanced/raw/refs/heads/main/filters/doordash-enhanced.txt) in uBlock Origin or AdGuard.
+
 ### Transparency
 
 | Feature | Description | Default |

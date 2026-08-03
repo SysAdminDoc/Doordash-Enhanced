@@ -1,0 +1,31 @@
+! Title: DoorDash Enhanced
+! Description: Cosmetic ad and promotion rules derived from DoorDash Enhanced.
+! Homepage: https://github.com/SysAdminDoc/Doordash-Enhanced
+! Expires: 14 days
+
+! DashPass promotions
+doordash.com,doordash.ca,doordash.com.au,dash.com##[data-testid*="dashpass" i]
+doordash.com,doordash.ca,doordash.com.au,dash.com##[aria-label*="DashPass" i]
+doordash.com,doordash.ca,doordash.com.au,dash.com##a[href*="dashpass"]
+doordash.com,doordash.ca,doordash.com.au,dash.com##a[href*="/consumer/membership"]
+
+! Sponsored store cards, retail items, and carousel sections
+doordash.com,doordash.ca,doordash.com.au,dash.com##[data-testid="LegoStandardCarouselContainer"]:has-text(Sponsored)
+doordash.com,doordash.ca,doordash.com.au,dash.com##[data-testid="RetailItemCardCardContent"]:has-text(Sponsored)
+doordash.com,doordash.ca,doordash.com.au,dash.com##[data-testid="card.store"]:has-text(Sponsored)
+
+! Promotional banners and inactive verification surfaces
+doordash.com,doordash.ca,doordash.com.au,dash.com##[data-testid="homepage-banner-button"]
+doordash.com,doordash.ca,doordash.com.au,dash.com##[data-testid="homepage-banner-link"]
+doordash.com,doordash.ca,doordash.com.au,dash.com##[data-testid="turnstile/banner"]:not(:has(iframe))
+doordash.com,doordash.ca,doordash.com.au,dash.com##[data-testid="turnstile/overlay"]:not(:has(iframe))
+doordash.com,doordash.ca,doordash.com.au,dash.com##[data-testid="turnstile/widget"]:not(:has(iframe))
+
+! CMS promo surfaces and hero carousel
+doordash.com,doordash.ca,doordash.com.au,dash.com##[class*="sc-34f18914-0"]
+doordash.com,doordash.ca,doordash.com.au,dash.com##[class*="sc-34f18914-1"]
+doordash.com,doordash.ca,doordash.com.au,dash.com##[class*="sc-34f18914-2"]
+doordash.com,doordash.ca,doordash.com.au,dash.com##[class*="sc-34f18914-4"]
+doordash.com,doordash.ca,doordash.com.au,dash.com##[class*="sc-34f18914-5"]
+doordash.com,doordash.ca,doordash.com.au,dash.com##[data-testid="horizontal-linear-content-wrapper"]
+doordash.com,doordash.ca,doordash.com.au,dash.com##[data-testid="HeroImageContainer"]

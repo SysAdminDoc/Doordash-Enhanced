@@ -5,6 +5,7 @@ const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '..', 'DoorDashEnhanced.user.js'), 'utf8');
 const extensionContent = fs.readFileSync(path.join(__dirname, '..', 'extension', 'content.js'), 'utf8');
 const extensionManifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'));
+const filterList = fs.readFileSync(path.join(__dirname, '..', 'filters', 'doordash-enhanced.txt'), 'utf8');
 
 const headerVersion = source.match(/@version\s+([0-9]+\.[0-9]+\.[0-9]+)/);
 const runtimeVersion = source.match(/var VERSION\s*=\s*'([^']+)'/);
@@ -28,5 +29,7 @@ assert.ok(source.includes('function registerFeatureMenuCommands()'), 'boolean fe
 assert.equal(extensionManifest.version, headerVersion[1], 'companion manifest version must match the userscript');
 assert.ok(extensionContent.includes("window.GM_getValue = function"), 'companion build must include the GM_getValue shim');
 assert.ok(!extensionContent.includes('// ==UserScript=='), 'companion build must not embed userscript metadata');
+assert.ok(filterList.includes('[data-testid="LegoStandardCarouselContainer"]:has-text(Sponsored)'), 'standalone filter list must cover sponsored carousels');
+assert.ok(filterList.includes('[data-testid*="dashpass" i]'), 'standalone filter list must cover DashPass promotions');
 
 console.log('userscript contract checks passed');
