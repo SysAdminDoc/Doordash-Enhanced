@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DoorDash Enhanced",
-  "version": "2.8.0",
+  "version": "2.9.0",
   "description": "DoorDash dark mode, fee transparency, checkout automation, and local utilities.",
   "action": {
     "default_title": "DoorDash Enhanced"
@@ -22,7 +22,9 @@
         "https://www.dash.com/*",
         "https://dash.com/*"
       ],
-      "js": ["content.js"],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_start"
     }
   ]

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DoorDash Enhanced
 // @namespace    https://github.com/SysAdminDoc
-// @version      2.8.0
+// @version      2.9.0
 // @description  Comprehensive DoorDash enhancer: dark mode, ad/promo blocking, fee transparency, checkout automation, and UI cleanup.
 // @author       SysAdminDoc
 // @match        https://www.doordash.com/*
@@ -28,7 +28,7 @@
     'use strict';
 
     var SCRIPT_ID = 'dd-enhanced';
-    var VERSION   = '2.8.0';
+    var VERSION   = '2.9.0';
 
     var DEFAULT_SETTINGS = {
         darkMode:            true,

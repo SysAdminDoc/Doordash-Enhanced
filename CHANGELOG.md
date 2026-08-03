@@ -2,6 +2,12 @@
 
 All notable changes to Doordash-Enhanced will be documented in this file.
 
+## [v2.9.0] - 2026-08-03
+
+- Added: Idle-safe, idempotent feature lifecycle management with route-aware lazy mounting and a shared CSS bundle.
+- Added: Local Orders-page history, CSV/JSON export, spending summary, group-order portion pricing, local promo-code trials, four-language settings localization, Dasher dark mode, per-feature menu toggles, and a standalone cosmetic filter list.
+- Added: A dependency-free metadata validator, CI workflow, and generated Chrome MV3 companion build.
+
 ## [v2.8.0] - 2026-08-03
 
 - Added: Catppuccin theme picker, card density controls, delivery-fee filtering, settings export/import, and regional site matching.
@@ -18,7 +24,7 @@ All notable changes to Doordash-Enhanced will be documented in this file.
 - Changed: Removed Alt keyboard shortcuts, added Trusted Types coverage, isolated the settings panel in Shadow DOM, and hardened SPA feature lifecycle cleanup.
 - Changed: Page-bound features now lazy-mount on matching routes and CSS-only styles share one idle-safe bundle.
 
-## [v2.6.1] - %Y->- (HEAD -> main, origin/main, origin/HEAD)
+## [v2.6.1] - 2026-04-13
 
 - Changed: Update README.md
 - Changed: Update DoorDashEnhanced.user.js

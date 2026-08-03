@@ -23,7 +23,7 @@
     'use strict';
 
     var SCRIPT_ID = 'dd-enhanced';
-    var VERSION   = '2.8.0';
+    var VERSION   = '2.9.0';
 
     var DEFAULT_SETTINGS = {
         darkMode:            true,
