@@ -128,7 +128,7 @@ Then open `chrome://extensions`, enable **Developer mode**, and choose **Load un
 All features are togglable from the built-in settings panel:
 
 - **Gear icon** — Click the gear icon injected into the DoorDash header bar
-- **Userscript-manager menu** — Open settings or run navigation actions from the Tampermonkey/Violentmonkey menu
+- **Userscript-manager menu** — Open settings, toggle individual boolean features, or run navigation actions from the Tampermonkey/Violentmonkey menu
 
 Settings are organized into groups: Appearance, Ad Blocking, Transparency, Checkout, Utilities, and UI Cleanup. Each feature can be independently enabled or disabled with instant apply/remove — no page reload required.
 

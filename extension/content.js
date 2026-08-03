@@ -3527,12 +3527,7 @@
         }, 1400);
 
         GM_registerMenuCommand('Open Settings', toggleSettingsPanel);
-        GM_registerMenuCommand('Toggle Dark Mode', function() {
-            var cur = getSetting('darkMode');
-            setSetting('darkMode', !cur);
-            var f = features.find(function(feat) { return feat.key === 'darkMode'; });
-            if (cur) unmountFeature(f); else mountFeature(f);
-        });
+        registerFeatureMenuCommands();
         GM_registerMenuCommand('Focus Search', function() {
             var el = document.querySelector('[data-anchor-id="HeaderSearchInputField"]');
             if (el) el.focus();
@@ -3545,6 +3540,17 @@
         GM_registerMenuCommand('Go to Orders', function() { window.location.href = '/orders'; });
 
         console.log('[DoorDash Enhanced] v' + VERSION + ' loaded. Click the gear icon or use Tampermonkey menu for settings.');
+    }
+
+    function registerFeatureMenuCommands() {
+        features.forEach(function(feature) {
+            if (feature.custom) return;
+            GM_registerMenuCommand('Toggle ' + localizedFeature(feature)[0], function() {
+                var current = !!getSetting(feature.key);
+                setSetting(feature.key, !current);
+                if (current) unmountFeature(feature); else mountFeature(feature);
+            });
+        });
     }
 
     init();

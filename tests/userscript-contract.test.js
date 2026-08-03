@@ -24,6 +24,7 @@ assert.ok(source.includes('feature._mountToken'), 'feature mounting must guard a
 assert.ok(source.includes('scheduledHandle.cancel()'), 'observer teardown must cancel pending idle work');
 assert.ok(source.includes("var CSS_BUNDLE_ID = SCRIPT_ID + '-styles';"), 'CSS-only features must share one style bundle');
 assert.ok(source.includes('entryMatcher: isCheckoutPage'), 'page-bound features must declare an entry matcher');
+assert.ok(source.includes('function registerFeatureMenuCommands()'), 'boolean features must be available from the userscript menu');
 assert.equal(extensionManifest.version, headerVersion[1], 'companion manifest version must match the userscript');
 assert.ok(extensionContent.includes("window.GM_getValue = function"), 'companion build must include the GM_getValue shim');
 assert.ok(!extensionContent.includes('// ==UserScript=='), 'companion build must not embed userscript metadata');
