@@ -1,11 +1,17 @@
 // ==UserScript==
 // @name         DoorDash Enhanced
 // @namespace    https://github.com/SysAdminDoc
-// @version      2.7.0
-// @description  Comprehensive DoorDash enhancer: dark mode, ad/promo blocking, fee transparency, UI cleanup, keyboard shortcuts, and more.
+// @version      2.8.0
+// @description  Comprehensive DoorDash enhancer: dark mode, ad/promo blocking, fee transparency, checkout automation, and UI cleanup.
 // @author       SysAdminDoc
 // @match        https://www.doordash.com/*
 // @match        https://doordash.com/*
+// @match        https://www.doordash.ca/*
+// @match        https://doordash.ca/*
+// @match        https://www.doordash.com.au/*
+// @match        https://doordash.com.au/*
+// @match        https://www.dash.com/*
+// @match        https://dash.com/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
@@ -21,7 +27,7 @@
     'use strict';
 
     var SCRIPT_ID = 'dd-enhanced';
-    var VERSION   = '2.7.0';
+    var VERSION   = '2.8.0';
 
     var DEFAULT_SETTINGS = {
         darkMode:            true,
@@ -35,7 +41,6 @@
         priceCalculator:     true,
         wideLayout:          false,
         stickyCart:          true,
-        keyboardShortcuts:   true,
         autoExpandFees:      true,
         hideTurnstile:       true,
         visualFlair:         true,
@@ -46,6 +51,15 @@
         theme:               'mocha', // 'mocha', 'frappe', 'macchiato', 'latte'
         cardDensity:         'comfortable', // 'comfortable', 'compact', 'dense'
         maxDeliveryFee:      'off', // 'off' or dollar amount like '5.00'
+        minimalistMode:      false,
+        unitPriceCalculator: true,
+        allergenFilter:      '',
+        deliveryFeeBaseline: true,
+        priceIncreaseDetector: true,
+        reorderLast:         true,
+        stickyOrderSummary:  true,
+        feeDropIndicator:    true,
+        syncUrl:             '',
     };
 
     function getSetting(key) { return GM_getValue(SCRIPT_ID + '_' + key, DEFAULT_SETTINGS[key]); }
@@ -86,6 +100,7 @@
             group: 'Appearance',
             desc: 'Full dark theme via Prism variable overrides',
             styleId: SCRIPT_ID + '-dark',
+            immediate: true,
             init: function() { injectStyle(this.styleId, darkModeCSS()); },
             destroy: function() { removeStyle(this.styleId); }
         },
@@ -347,24 +362,6 @@
             destroy: function() { removeStyle(this.styleId); }
         },
 
-        // -- KEYBOARD SHORTCUTS (settings panel only, via Escape key) ------
-        {
-            key: 'keyboardShortcuts',
-            name: 'Keyboard Shortcuts',
-            group: 'Utilities',
-            desc: 'Escape closes settings panel; all actions available via gear icon and Tampermonkey menu',
-            init: function() {
-                this._handler = function(e) {
-                    if (e.key === 'Escape') {
-                        var panel = document.getElementById(SCRIPT_ID + '-settings');
-                        if (panel) { toggleSettingsPanel(); e.preventDefault(); }
-                    }
-                };
-                document.addEventListener('keydown', this._handler);
-            },
-            destroy: function() { document.removeEventListener('keydown', this._handler); }
-        },
-
         // -- SEARCH HISTORY -----------------------------------------------
         {
             key: 'quickSearch',
@@ -461,6 +458,7 @@
             desc: 'Color palette: Mocha (dark), Frappé, Macchiato, or Latte (light)',
             custom: true,
             styleId: SCRIPT_ID + '-catppuccin',
+            immediate: true,
             init: function() { injectStyle(this.styleId, catppuccinThemeCSS(getSetting('theme') || 'mocha')); },
             destroy: function() { removeStyle(this.styleId); }
         },
@@ -513,12 +511,162 @@
             },
             destroy: function() {
                 if (this._obs) this._obs.disconnect();
-                document.querySelectorAll('[data-dd-fee-hidden="true"]').forEach(function(card) {
+                document.querySelectorAll('[data-dd-fee-filtered]').forEach(function(card) {
                     card.style.removeProperty('display');
                     delete card.dataset.ddFeeHidden;
                     delete card.dataset.ddFeeFiltered;
                 });
             }
+        },
+
+        // -- MINIMALIST MODE ----------------------------------------------
+        {
+            key: 'minimalistMode',
+            name: 'Minimalist Mode',
+            group: 'Appearance',
+            desc: 'Hide badges and list images for a quieter browsing view',
+            styleId: SCRIPT_ID + '-minimalist',
+            init: function() { injectStyle(this.styleId, minimalistModeCSS()); },
+            destroy: function() { removeStyle(this.styleId); }
+        },
+
+        // -- UNIT PRICE CALCULATOR ----------------------------------------
+        {
+            key: 'unitPriceCalculator',
+            name: 'Unit Price Calculator',
+            group: 'Transparency',
+            desc: 'Show price per ounce or per 100g on retail items',
+            init: function() {
+                applyUnitPrices(document.body);
+                this._obs = safeObserver(function(node) { applyUnitPrices(node); });
+            },
+            destroy: function() {
+                if (this._obs) this._obs.disconnect();
+                document.querySelectorAll('.' + SCRIPT_ID + '-unit-price').forEach(function(el) { el.remove(); });
+                document.querySelectorAll('[data-' + SCRIPT_ID + '-unit-priced]').forEach(function(el) { el.removeAttribute('data-' + SCRIPT_ID + '-unit-priced'); });
+            }
+        },
+
+        // -- ALLERGEN FILTER ----------------------------------------------
+        {
+            key: 'allergenFilter',
+            name: 'Allergen Filter',
+            group: 'Transparency',
+            desc: 'Grey menu items that match your comma-separated allergen list',
+            custom: true,
+            styleId: SCRIPT_ID + '-allergens',
+            init: function() {
+                injectStyle(this.styleId, allergenFilterCSS());
+                applyAllergenFilter(document.body);
+                this._obs = safeObserver(function(node) { applyAllergenFilter(node); });
+            },
+            destroy: function() {
+                removeStyle(this.styleId);
+                if (this._obs) this._obs.disconnect();
+                document.querySelectorAll('[data-' + SCRIPT_ID + '-allergen]').forEach(function(el) {
+                    el.removeAttribute('data-' + SCRIPT_ID + '-allergen');
+                });
+                document.querySelectorAll('.' + SCRIPT_ID + '-allergen-badge').forEach(function(el) { el.remove(); });
+            }
+        },
+
+        // -- DELIVERY FEE BASELINE ----------------------------------------
+        {
+            key: 'deliveryFeeBaseline',
+            name: 'Delivery Fee Baseline',
+            group: 'Transparency',
+            desc: 'Compare visible delivery fees against your rolling median',
+            init: function() {
+                updateDeliveryFeeInsights();
+                this._obs = safeObserver(function() { updateDeliveryFeeInsights(); });
+            },
+            destroy: function() {
+                if (this._obs) this._obs.disconnect();
+                document.querySelectorAll('.' + SCRIPT_ID + '-fee-baseline').forEach(function(el) { el.remove(); });
+            }
+        },
+
+        // -- PRICE INCREASE DETECTOR --------------------------------------
+        {
+            key: 'priceIncreaseDetector',
+            name: 'Price Increase Detector',
+            group: 'Transparency',
+            desc: 'Highlight menu items that cost more than last time you viewed them',
+            init: function() {
+                scanPriceIncreases(document.body);
+                this._obs = safeObserver(function(node) { scanPriceIncreases(node); });
+            },
+            onNavigate: function() { scanPriceIncreases(document.body); },
+            destroy: function() {
+                if (this._obs) this._obs.disconnect();
+                document.querySelectorAll('[data-' + SCRIPT_ID + '-price-increase]').forEach(function(el) {
+                    el.removeAttribute('data-' + SCRIPT_ID + '-price-increase');
+                });
+                document.querySelectorAll('.' + SCRIPT_ID + '-price-increase').forEach(function(el) { el.remove(); });
+            }
+        },
+
+        // -- REORDER LAST --------------------------------------------------
+        {
+            key: 'reorderLast',
+            name: 'Reorder Last',
+            group: 'Utilities',
+            desc: 'Show a sticky home-page button for your last visited restaurant',
+            init: function() {
+                updateLastRestaurant();
+                renderReorderButton();
+                this._obs = safeObserver(function() {
+                    updateLastRestaurant();
+                    renderReorderButton();
+                });
+            },
+            onNavigate: function() {
+                updateLastRestaurant();
+                renderReorderButton();
+            },
+            destroy: function() {
+                if (this._obs) this._obs.disconnect();
+                var btn = document.getElementById(SCRIPT_ID + '-reorder-last');
+                if (btn) btn.remove();
+            }
+        },
+
+        // -- STICKY ORDER SUMMARY -----------------------------------------
+        {
+            key: 'stickyOrderSummary',
+            name: 'Sticky Order Summary',
+            group: 'Checkout',
+            desc: 'Keep the checkout order summary visible while scrolling',
+            styleId: SCRIPT_ID + '-sticky-summary',
+            init: function() { injectStyle(this.styleId, stickyOrderSummaryCSS()); },
+            destroy: function() { removeStyle(this.styleId); }
+        },
+
+        // -- FEE DROP INDICATOR -------------------------------------------
+        {
+            key: 'feeDropIndicator',
+            name: 'Fee Drop Indicator',
+            group: 'Transparency',
+            desc: 'Mark visible delivery fees that drop during the session',
+            init: function() {
+                updateFeeDropIndicator();
+                this._obs = safeObserver(function() { updateFeeDropIndicator(); });
+            },
+            destroy: function() {
+                if (this._obs) this._obs.disconnect();
+                document.querySelectorAll('.' + SCRIPT_ID + '-fee-drop').forEach(function(el) { el.remove(); });
+            }
+        },
+
+        // -- SETTINGS SYNC URL --------------------------------------------
+        {
+            key: 'syncUrl',
+            name: 'Settings Sync URL',
+            group: 'Persistence',
+            desc: 'Pull settings from a user-configured raw Gist JSON URL',
+            custom: true,
+            init: function() { pullSettingsSync(false); },
+            destroy: function() {}
         },
     ];
 
@@ -1169,6 +1317,7 @@
     var _tipApplied = false;
 
     function initTipDefault() {
+        destroyTipDefault();
         _tipApplied = false;
         _tipObs = safeObserver(function() { applyTipDefault(); });
         applyTipDefault();
@@ -1195,7 +1344,11 @@
                 setTimeout(function() {
                     var text = btn.textContent.trim();
                     if (text && text !== 'Other' && text.startsWith('$')) {
-                        GM_setValue(SCRIPT_ID + '_tipLastAmount', text.replace('$', ''));
+                        var amount = text.replace('$', '');
+                        var perRestaurant = getJsonValue('tip_by_restaurant', {});
+                        perRestaurant[getStoreKey()] = amount;
+                        setJsonValue('tip_by_restaurant', perRestaurant);
+                        GM_setValue(SCRIPT_ID + '_tipLastAmount', amount);
                     }
                 }, 100);
             });
@@ -1203,7 +1356,7 @@
 
         var targetAmount;
         if (mode === 'remember') {
-            targetAmount = GM_getValue(SCRIPT_ID + '_tipLastAmount', null);
+            targetAmount = getJsonValue('tip_by_restaurant', {})[getStoreKey()] || GM_getValue(SCRIPT_ID + '_tipLastAmount', null);
             if (!targetAmount) return; // Nothing remembered yet
         } else {
             targetAmount = mode; // Direct dollar amount like "5.00"
@@ -1214,11 +1367,20 @@
         var matched = false;
         var otherBtn = null;
         var targetFloat = parseFloat(targetAmount);
+        var nearestBtn = null;
+        var nearestDiff = Infinity;
 
         buttons.forEach(function(btn) {
             var text = btn.textContent.trim();
             if (text === 'Other') { otherBtn = btn; return; }
             var val = parseFloat(text.replace('$', ''));
+            if (!isNaN(val)) {
+                var diff = Math.abs(val - targetFloat);
+                if (diff < nearestDiff) {
+                    nearestDiff = diff;
+                    nearestBtn = btn;
+                }
+            }
             if (!isNaN(val) && Math.abs(val - targetFloat) < 0.01) {
                 if (btn.getAttribute('aria-checked') !== 'true') {
                     btn.click();
@@ -1227,6 +1389,12 @@
                 matched = true;
             }
         });
+
+        if (!matched && nearestBtn && nearestDiff <= 0.50) {
+            nearestBtn.click();
+            matched = true;
+            console.log('[DD Enhanced] Tip snapped to nearest preset for $' + targetAmount);
+        }
 
         if (!matched && otherBtn) {
             // Click "Other" to open custom input
@@ -1249,10 +1417,9 @@
                     nativeSet.call(tipInput, targetAmount);
                     tipInput.dispatchEvent(new Event('input', { bubbles: true }));
                     tipInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    // Try pressing Enter or finding a submit/apply button
+                    tipInput.blur();
+                    // Find a nearby apply/update button without synthesizing keyboard input.
                     setTimeout(function() {
-                        tipInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
-                        // Also look for a nearby apply/update button
                         var parent = tipInput.closest('div[class*="sc-"]') || tipInput.parentElement;
                         if (parent) {
                             var applyBtn = parent.querySelector('button');
@@ -1269,6 +1436,9 @@
         _tipApplied = true;
         // Save the amount we just applied (for "remember" mode feedback)
         if (mode !== 'remember') {
+            var fixedTips = getJsonValue('tip_by_restaurant', {});
+            fixedTips[getStoreKey()] = targetAmount;
+            setJsonValue('tip_by_restaurant', fixedTips);
             GM_setValue(SCRIPT_ID + '_tipLastAmount', targetAmount);
         }
     }
@@ -1698,6 +1868,281 @@
 
 
     // =====================================================================
+    //  ROADMAP FEATURE HELPERS
+    // =====================================================================
+    var _deliveryBaselineLastSample = '';
+    var _feeDropLast = null;
+
+    function minimalistModeCSS() {
+        return [
+        '[data-anchor-id="StoreCard"] img, [data-testid="card.store"] img, [data-testid="GenericItemCard"] img {',
+        '  display: none !important;',
+        '}',
+        '[class*="TagWrapper-sc-"], [data-testid*="badge" i], [data-anchor-id*="badge" i] {',
+        '  display: none !important;',
+        '}',
+        '[data-anchor-id="StoreCard"], [data-testid="card.store"], [data-testid="GenericItemCard"] {',
+        '  min-height: auto !important;',
+        '}',
+        ].join('\n');
+    }
+
+    function allergenFilterCSS() {
+        return [
+        '[data-' + SCRIPT_ID + '-allergen="true"] {',
+        '  opacity: 0.42 !important;',
+        '  filter: grayscale(0.8) !important;',
+        '}',
+        '.' + SCRIPT_ID + '-allergen-badge, .' + SCRIPT_ID + '-unit-price, .' + SCRIPT_ID + '-price-increase, .' + SCRIPT_ID + '-fee-baseline, .' + SCRIPT_ID + '-fee-drop {',
+        '  display: inline-flex;',
+        '  align-items: center;',
+        '  margin-left: 6px;',
+        '  padding: 2px 6px;',
+        '  border-radius: 6px;',
+        '  font-size: 10px;',
+        '  font-weight: 700;',
+        '  line-height: 1.2;',
+        '}',
+        '.' + SCRIPT_ID + '-allergen-badge { background: rgba(255, 80, 40, 0.14); color: #ff5028; border: 1px solid rgba(255, 80, 40, 0.28); }',
+        '.' + SCRIPT_ID + '-unit-price { background: rgba(30, 136, 229, 0.14); color: #4aa3ff; border: 1px solid rgba(30, 136, 229, 0.28); }',
+        '.' + SCRIPT_ID + '-price-increase { background: rgba(255, 80, 40, 0.16); color: #ff5028; border: 1px solid rgba(255, 80, 40, 0.32); }',
+        '.' + SCRIPT_ID + '-fee-baseline { background: rgba(137, 180, 250, 0.16); color: #89b4fa; border: 1px solid rgba(137, 180, 250, 0.32); }',
+        '.' + SCRIPT_ID + '-fee-drop { background: rgba(166, 227, 161, 0.16); color: #5ac85a; border: 1px solid rgba(166, 227, 161, 0.32); }',
+        ].join('\n');
+    }
+
+    function stickyOrderSummaryCSS() {
+        return [
+        '[data-testid="LineItems"],',
+        '[data-testid="OrderSummary"],',
+        '[data-testid="CheckoutCart"],',
+        '[data-anchor-id="OrderCartContainer"] {',
+        '  position: sticky !important;',
+        '  top: 84px !important;',
+        '  align-self: flex-start !important;',
+        '  z-index: 30 !important;',
+        '}',
+        ].join('\n');
+    }
+
+    function parseMoney(text) {
+        var match = (text || '').match(/\$(\d+(?:\.\d{1,2})?)/);
+        return match ? parseFloat(match[1]) : null;
+    }
+
+    function getJsonValue(key, fallback) {
+        try {
+            var raw = GM_getValue(SCRIPT_ID + '_' + key, '');
+            return raw ? JSON.parse(raw) : fallback;
+        } catch(e) {
+            return fallback;
+        }
+    }
+
+    function setJsonValue(key, value) {
+        GM_setValue(SCRIPT_ID + '_' + key, JSON.stringify(value));
+    }
+
+    function getStoreKey() {
+        var match = location.pathname.match(/\/store\/([^/?#]+)/i);
+        if (match) return decodeURIComponent(match[1]).toLowerCase();
+        var title = (document.title || '').replace(/\s*-\s*DoorDash.*$/i, '').trim();
+        return title ? title.toLowerCase() : 'unknown-store';
+    }
+
+    function getStoreName() {
+        var heading = document.querySelector('h1, [data-testid="storeHeaderName"], [data-anchor-id="StoreHeaderName"]');
+        var text = heading ? heading.textContent.trim() : '';
+        if (text) return text;
+        return (document.title || 'Last restaurant').replace(/\s*-\s*DoorDash.*$/i, '').trim() || 'Last restaurant';
+    }
+
+    function itemCards(root) {
+        var scope = root && root.querySelectorAll ? root : document;
+        return scope.querySelectorAll('[data-testid="GenericItemCard"], [data-anchor-id="StoreCard"], [data-testid="card.store"]');
+    }
+
+    function itemName(card) {
+        var candidate = card.querySelector('[data-testid*="name" i], [data-anchor-id*="name" i], h2, h3');
+        var text = candidate ? candidate.textContent : card.textContent;
+        return (text || '')
+            .replace(/\$\d+(?:\.\d{1,2})?/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 96);
+    }
+
+    function appendInlineBadge(target, className, text) {
+        if (!target || target.querySelector('.' + className)) return;
+        var badge = document.createElement('span');
+        badge.className = className;
+        badge.textContent = text;
+        target.appendChild(badge);
+    }
+
+    function applyUnitPrices(root) {
+        itemCards(root).forEach(function(card) {
+            if (card.getAttribute('data-' + SCRIPT_ID + '-unit-priced')) return;
+            var text = card.textContent || '';
+            var price = parseMoney(text);
+            if (!price) return;
+            var unit = text.match(/(\d+(?:\.\d+)?)\s*(oz|ounce|ounces|lb|lbs|g|gram|grams|kg)\b/i);
+            if (!unit) return;
+            var qty = parseFloat(unit[1]);
+            var label = unit[2].toLowerCase();
+            if (!qty || isNaN(qty)) return;
+            var unitText = '';
+            if (/^lb/.test(label)) unitText = '$' + (price / (qty * 16)).toFixed(2) + '/oz';
+            else if (/^oz|ounce/.test(label)) unitText = '$' + (price / qty).toFixed(2) + '/oz';
+            else if (label === 'kg') unitText = '$' + (price / (qty * 10)).toFixed(2) + '/100g';
+            else unitText = '$' + (price / (qty / 100)).toFixed(2) + '/100g';
+            var priceNode = Array.prototype.find.call(card.querySelectorAll('*'), function(el) {
+                return /\$\d+(?:\.\d{1,2})?/.test(el.textContent || '') && el.children.length === 0;
+            }) || card;
+            appendInlineBadge(priceNode.parentElement || card, SCRIPT_ID + '-unit-price', unitText);
+            card.setAttribute('data-' + SCRIPT_ID + '-unit-priced', 'true');
+        });
+    }
+
+    function allergenTerms() {
+        return String(getSetting('allergenFilter') || '')
+            .split(',')
+            .map(function(s) { return s.trim().toLowerCase(); })
+            .filter(Boolean);
+    }
+
+    function applyAllergenFilter(root) {
+        var terms = allergenTerms();
+        if (!terms.length) return;
+        itemCards(root).forEach(function(card) {
+            var text = (card.textContent || '').toLowerCase();
+            var hit = terms.find(function(term) { return text.indexOf(term) !== -1; });
+            if (!hit) return;
+            card.setAttribute('data-' + SCRIPT_ID + '-allergen', 'true');
+            appendInlineBadge(card, SCRIPT_ID + '-allergen-badge', 'Contains ' + hit);
+        });
+    }
+
+    function findDeliveryFeeLine() {
+        var candidates = document.querySelectorAll('[data-testid], [data-anchor-id], div, span');
+        for (var i = 0; i < candidates.length; i++) {
+            var el = candidates[i];
+            var text = el.textContent || '';
+            if (text.length > 180 || !/delivery\s*fee/i.test(text)) continue;
+            var fee = parseMoney(text);
+            if (fee !== null) return { el: el, fee: fee };
+        }
+        return null;
+    }
+
+    function median(values) {
+        if (!values.length) return null;
+        var sorted = values.slice().sort(function(a, b) { return a - b; });
+        var mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+
+    function updateDeliveryFeeInsights() {
+        if (!isCheckoutPage()) return;
+        var found = findDeliveryFeeLine();
+        if (!found) return;
+        var samples = getJsonValue('delivery_fee_samples', []);
+        var sampleKey = location.pathname + ':' + found.fee.toFixed(2);
+        if (_deliveryBaselineLastSample !== sampleKey) {
+            samples.push(found.fee);
+            samples = samples.slice(-50);
+            setJsonValue('delivery_fee_samples', samples);
+            _deliveryBaselineLastSample = sampleKey;
+        }
+        if (samples.length < 5) return;
+        var med = median(samples);
+        var delta = found.fee - med;
+        var label = (delta >= 0 ? '+' : '-') + '$' + Math.abs(delta).toFixed(2) + ' vs median';
+        appendInlineBadge(found.el, SCRIPT_ID + '-fee-baseline', label);
+    }
+
+    function scanPriceIncreases(root) {
+        if (!isStorePage()) return;
+        var key = 'price_history_' + getStoreKey();
+        var prior = getJsonValue(key, {});
+        var next = Object.assign({}, prior);
+        itemCards(root).forEach(function(card) {
+            var name = itemName(card);
+            var price = parseMoney(card.textContent || '');
+            if (!name || !price) return;
+            var old = prior[name];
+            if (typeof old === 'number' && price > old + 0.01) {
+                card.setAttribute('data-' + SCRIPT_ID + '-price-increase', 'true');
+                appendInlineBadge(card, SCRIPT_ID + '-price-increase', '+$' + (price - old).toFixed(2));
+            }
+            next[name] = price;
+        });
+        setJsonValue(key, next);
+    }
+
+    function updateLastRestaurant() {
+        if (!isStorePage()) return;
+        setJsonValue('last_restaurant', {
+            name: getStoreName(),
+            url: location.href,
+            savedAt: Date.now()
+        });
+    }
+
+    function renderReorderButton() {
+        var existing = document.getElementById(SCRIPT_ID + '-reorder-last');
+        if (isStorePage() || !/^\/(?:|home|consumer|search)/i.test(location.pathname)) {
+            if (existing) existing.remove();
+            return;
+        }
+        var last = getJsonValue('last_restaurant', null);
+        if (!last || !last.url) { if (existing) existing.remove(); return; }
+        var btn = existing || document.createElement('button');
+        btn.id = SCRIPT_ID + '-reorder-last';
+        btn.textContent = 'Reorder ' + (last.name || 'last');
+        Object.assign(btn.style, {
+            position: 'fixed', left: '18px', bottom: '24px', zIndex: '99998',
+            border: '1px solid rgba(255, 48, 8, 0.35)', borderRadius: '12px',
+            background: 'var(--usage-color-background-elevated-default, #1e1e2e)',
+            color: 'var(--usage-color-text-default, #fff)', padding: '10px 14px',
+            boxShadow: '0 10px 28px rgba(0,0,0,0.24)', cursor: 'pointer',
+            fontSize: '13px', fontWeight: '700',
+        });
+        btn.onclick = function() { location.href = last.url; };
+        if (!existing) document.body.appendChild(btn);
+    }
+
+    function updateFeeDropIndicator() {
+        if (!isCheckoutPage()) return;
+        var found = findDeliveryFeeLine();
+        if (!found) return;
+        if (_feeDropLast !== null && found.fee < _feeDropLast - 0.01) {
+            appendInlineBadge(found.el, SCRIPT_ID + '-fee-drop', 'Dropped $' + (_feeDropLast - found.fee).toFixed(2));
+        }
+        _feeDropLast = found.fee;
+    }
+
+    function pullSettingsSync(showSuccess) {
+        var url = String(getSetting('syncUrl') || '').trim();
+        if (!url || !/^https:\/\/gist\.githubusercontent\.com\//i.test(url)) return;
+        fetch(url, { credentials: 'omit', cache: 'no-store' })
+            .then(function(res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(function(data) {
+                Object.keys(data || {}).forEach(function(key) {
+                    if (key in DEFAULT_SETTINGS && key !== 'syncUrl') setSetting(key, data[key]);
+                });
+                if (showSuccess) showToast('Settings synced from Gist');
+            })
+            .catch(function(err) {
+                showToast('Settings sync failed: ' + err.message, true);
+            });
+    }
+
+
+    // =====================================================================
     //  SEARCH HISTORY
     // =====================================================================
     function showSearchHistory(inputEl, history) {
@@ -1797,15 +2242,96 @@
     function removeStyle(id) { var el = document.getElementById(id); if (el) el.remove(); }
     function isStorePage() { return /\/store\//.test(location.pathname); }
     function isCheckoutPage() { return /\/checkout/i.test(location.pathname) || !!document.querySelector('[data-testid="LineItems"]'); }
+    function siteVariant() {
+        var host = location.hostname.toLowerCase();
+        if (host.endsWith('doordash.ca')) return 'ca';
+        if (host.endsWith('doordash.com.au')) return 'au';
+        if (host.endsWith('dash.com')) return 'dash';
+        return 'us';
+    }
+
+    function runIdle(callback, timeout) {
+        var ric = window.requestIdleCallback || function(cb) {
+            return setTimeout(function() { cb({ didTimeout: true, timeRemaining: function() { return 0; } }); }, 80);
+        };
+        return ric(function() {
+            try { callback(); } catch(e) { console.error('[DD Enhanced] idle task:', e); }
+        }, { timeout: timeout || 700 });
+    }
+
+    function settingEnabled(feature) {
+        var val = getSetting(feature.key);
+        return feature.custom ? !!val && val !== 'off' : !!val;
+    }
+
+    function mountFeature(feature) {
+        if (feature._mounted) unmountFeature(feature);
+        if (!settingEnabled(feature)) return;
+        var apply = function() {
+            if (!settingEnabled(feature)) return;
+            try {
+                feature.init();
+                feature._mounted = true;
+            } catch(e) {
+                console.error('[DD Enhanced] Init ' + feature.key + ':', e);
+            }
+        };
+        if (feature.immediate) apply(); else runIdle(apply);
+    }
+
+    function unmountFeature(feature) {
+        try { feature.destroy(); } catch(e) { console.error('[DD Enhanced] Destroy ' + feature.key + ':', e); }
+        feature._mounted = false;
+    }
+
+    function refreshFeature(feature) {
+        unmountFeature(feature);
+        mountFeature(feature);
+    }
+
+    function closeSettingsPanel() {
+        var host = document.getElementById(SCRIPT_ID + '-settings');
+        var backdrop = document.getElementById(SCRIPT_ID + '-backdrop');
+        if (host) host.remove();
+        if (backdrop) backdrop.remove();
+    }
+
+    function showToast(message, isError) {
+        var toast = document.createElement('div');
+        toast.textContent = message;
+        Object.assign(toast.style, {
+            position: 'fixed', right: '18px', bottom: '24px', zIndex: '100002',
+            maxWidth: '320px', padding: '10px 12px', borderRadius: '8px',
+            background: isError ? '#3b1616' : '#182818',
+            color: isError ? '#ffb4b4' : '#c8f7c5',
+            border: '1px solid ' + (isError ? 'rgba(255,80,80,0.38)' : 'rgba(90,200,90,0.38)'),
+            boxShadow: '0 10px 28px rgba(0,0,0,0.28)', fontSize: '13px', fontWeight: '600',
+        });
+        document.body.appendChild(toast);
+        setTimeout(function() { toast.remove(); }, 2600);
+    }
 
     function safeObserver(callback) {
+        var queue = [];
+        var scheduled = false;
+        function flush() {
+            scheduled = false;
+            var nodes = queue.splice(0, queue.length);
+            nodes.forEach(function(node) {
+                try { callback(node); } catch(e) { console.error('[DD Enhanced] observer:', e); }
+            });
+        }
         var obs = new MutationObserver(function(mutations) {
             for (var i = 0; i < mutations.length; i++) {
                 var added = mutations[i].addedNodes;
                 for (var j = 0; j < added.length; j++) {
                     if (added[j].nodeType !== 1) continue;
-                    try { callback(added[j]); } catch(e) { /* silent */ }
+                    queue.push(added[j]);
                 }
+            }
+            if (!scheduled && queue.length) {
+                scheduled = true;
+                runIdle(flush);
             }
         });
         if (document.readyState === 'complete') {
@@ -1902,8 +2428,7 @@
             var cur = getSetting('darkMode');
             setSetting('darkMode', !cur);
             var f = features.find(function(feat) { return feat.key === 'darkMode'; });
-            try { f.destroy(); } catch(ex) { /* silent */ }
-            if (!cur) f.init();
+            if (cur) unmountFeature(f); else mountFeature(f);
         });
 
         var settingsBtn = document.createElement('button');
@@ -1954,7 +2479,7 @@
     // =====================================================================
     function toggleSettingsPanel() {
         var existing = document.getElementById(SCRIPT_ID + '-settings');
-        if (existing) { existing.remove(); var bd = document.getElementById(SCRIPT_ID + '-backdrop'); if (bd) bd.remove(); return; }
+        if (existing) { closeSettingsPanel(); return; }
 
         var isDark = getSetting('darkMode');
         var bg = isDark ? '#1a1a25' : '#fff';
@@ -1963,8 +2488,12 @@
         var groupBg = isDark ? '#141420' : '#f8f8f8';
         var rowHov = isDark ? '#222230' : '#f0f0f0';
 
+        var host = document.createElement('div');
+        host.id = SCRIPT_ID + '-settings';
+        var root = host.attachShadow ? host.attachShadow({ mode: 'open' }) : host;
+
         var panel = document.createElement('div');
-        panel.id = SCRIPT_ID + '-settings';
+        panel.id = SCRIPT_ID + '-settings-panel';
         Object.assign(panel.style, {
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
             background: bg, color: fg, borderRadius: '16px', zIndex: '100000',
@@ -1979,7 +2508,7 @@
         var closeBtn = document.createElement('button');
         Object.assign(closeBtn.style, { background: 'transparent', border: 'none', color: fg, cursor: 'pointer', fontSize: '24px', padding: '4px 8px', lineHeight: '1' });
         closeBtn.textContent = '\u00D7';
-        closeBtn.addEventListener('click', function() { panel.remove(); var bd2 = document.getElementById(SCRIPT_ID + '-backdrop'); if (bd2) bd2.remove(); });
+        closeBtn.addEventListener('click', closeSettingsPanel);
         hdr.appendChild(closeBtn);
         panel.appendChild(hdr);
 
@@ -2075,7 +2604,8 @@
                         }
                         setSetting('tipDefault', v);
                         _tipApplied = false;
-                        try { if (v !== 'off') { initTipDefault(); } else { destroyTipDefault(); } } catch(e) {}
+                        var tipFeature = features.find(function(feat) { return feat.key === 'tipDefault'; });
+                        refreshFeature(tipFeature);
                     }
 
                     sel.addEventListener('change', function() { toggleAmtInput(); saveTipSetting(); });
@@ -2120,8 +2650,7 @@
                     });
                     themeSel.addEventListener('change', function() {
                         setSetting('theme', themeSel.value);
-                        try { f.destroy(); } catch(e) { /* silent */ }
-                        f.init();
+                        refreshFeature(f);
                     });
                     row.appendChild(label);
                     row.appendChild(themeSel);
@@ -2151,8 +2680,7 @@
                     });
                     densitySel.addEventListener('change', function() {
                         setSetting('cardDensity', densitySel.value);
-                        try { f.destroy(); } catch(e) { /* silent */ }
-                        f.init();
+                        refreshFeature(f);
                     });
                     row.appendChild(label);
                     row.appendChild(densitySel);
@@ -2164,52 +2692,101 @@
                 if (f.key === 'maxDeliveryFee') {
                     var feeVal = getSetting('maxDeliveryFee') || 'off';
                     var feeCtrl = document.createElement('div');
-                    feeCtrl.style.cssText = 'flex-shrink:0;margin-left:12px;display:flex;align-items:center;gap:6px';
-                    var feeSel = document.createElement('select');
-                    Object.assign(feeSel.style, {
-                        background: isDark ? '#222230' : '#f0f0f0', color: fg,
-                        border: '1px solid ' + borderC, borderRadius: '8px',
-                        padding: '6px 8px', fontSize: '13px', cursor: 'pointer', outline: 'none',
-                    });
-                    [
-                        { val: 'off', text: 'Off' },
-                        { val: 'custom', text: 'Max $' },
-                    ].forEach(function(o) {
-                        var opt = document.createElement('option');
-                        opt.value = o.val; opt.textContent = o.text;
-                        if (o.val === 'off' && feeVal === 'off') opt.selected = true;
-                        if (o.val === 'custom' && feeVal !== 'off') opt.selected = true;
-                        feeSel.appendChild(opt);
+                    feeCtrl.style.cssText = 'flex-shrink:0;margin-left:12px;display:flex;align-items:center;gap:8px;min-width:190px';
+                    var feeToggle = document.createElement('button');
+                    Object.assign(feeToggle.style, {
+                        background: 'transparent', color: fg, border: '1px solid ' + borderC,
+                        borderRadius: '8px', padding: '6px 8px', fontSize: '12px', cursor: 'pointer',
                     });
                     var feeInput = document.createElement('input');
-                    Object.assign(feeInput.style, {
-                        width: '50px', background: isDark ? '#222230' : '#f0f0f0', color: fg,
+                    feeInput.type = 'range';
+                    feeInput.min = '0';
+                    feeInput.max = '15';
+                    feeInput.step = '0.50';
+                    feeInput.value = feeVal === 'off' ? '5.00' : feeVal;
+                    feeInput.style.flex = '1';
+                    var feeOut = document.createElement('span');
+                    feeOut.style.cssText = 'min-width:46px;text-align:right;font-size:12px;font-weight:700;color:' + fg;
+                    function renderFeeSlider() {
+                        var off = getSetting('maxDeliveryFee') === 'off';
+                        feeInput.disabled = off;
+                        feeInput.style.opacity = off ? '0.45' : '1';
+                        feeToggle.textContent = off ? 'Enable' : 'Off';
+                        feeOut.textContent = off ? 'Off' : '$' + parseFloat(feeInput.value).toFixed(2);
+                    }
+                    function saveFeeSetting() {
+                        var v = parseFloat(feeInput.value).toFixed(2);
+                        setSetting('maxDeliveryFee', v);
+                        renderFeeSlider();
+                        refreshFeature(f);
+                    }
+                    feeToggle.addEventListener('click', function() {
+                        if (getSetting('maxDeliveryFee') === 'off') saveFeeSetting();
+                        else { setSetting('maxDeliveryFee', 'off'); renderFeeSlider(); refreshFeature(f); }
+                    });
+                    feeInput.addEventListener('input', saveFeeSetting);
+                    renderFeeSlider();
+                    feeCtrl.appendChild(feeToggle);
+                    feeCtrl.appendChild(feeInput);
+                    feeCtrl.appendChild(feeOut);
+                    row.appendChild(label);
+                    row.appendChild(feeCtrl);
+                    box.appendChild(row);
+                    return;
+                }
+
+                // --- Custom UI for allergen filter ---
+                if (f.key === 'allergenFilter') {
+                    var allergyInput = document.createElement('input');
+                    Object.assign(allergyInput.style, {
+                        width: '170px', background: isDark ? '#222230' : '#f0f0f0', color: fg,
+                        border: '1px solid ' + borderC, borderRadius: '8px',
+                        padding: '6px 8px', fontSize: '13px', outline: 'none', marginLeft: '12px',
+                    });
+                    allergyInput.type = 'text';
+                    allergyInput.placeholder = 'peanut, shellfish';
+                    allergyInput.value = getSetting('allergenFilter') || '';
+                    allergyInput.addEventListener('change', function() {
+                        setSetting('allergenFilter', allergyInput.value.trim());
+                        refreshFeature(f);
+                    });
+                    row.appendChild(label);
+                    row.appendChild(allergyInput);
+                    box.appendChild(row);
+                    return;
+                }
+
+                // --- Custom UI for settings sync URL ---
+                if (f.key === 'syncUrl') {
+                    var syncCtrl = document.createElement('div');
+                    syncCtrl.style.cssText = 'flex-shrink:0;margin-left:12px;display:flex;align-items:center;gap:6px';
+                    var syncInput = document.createElement('input');
+                    Object.assign(syncInput.style, {
+                        width: '170px', background: isDark ? '#222230' : '#f0f0f0', color: fg,
                         border: '1px solid ' + borderC, borderRadius: '8px',
                         padding: '6px 8px', fontSize: '13px', outline: 'none',
                     });
-                    feeInput.type = 'text'; feeInput.placeholder = '5.00';
-                    if (feeVal !== 'off') feeInput.value = feeVal;
-                    function toggleFeeInput() { feeInput.style.display = feeSel.value === 'custom' ? 'block' : 'none'; }
-                    toggleFeeInput();
-                    function saveFeeSetting() {
-                        var v = feeSel.value;
-                        if (v === 'custom') {
-                            var amt = feeInput.value.replace(/[^0-9.]/g, '');
-                            if (!amt || isNaN(parseFloat(amt))) amt = '5';
-                            v = parseFloat(amt).toFixed(2);
-                            feeInput.value = v;
-                        }
-                        setSetting('maxDeliveryFee', v);
-                        try { f.destroy(); } catch(e) { /* silent */ }
-                        if (v !== 'off') { try { f.init(); } catch(e) {} }
-                    }
-                    feeSel.addEventListener('change', function() { toggleFeeInput(); saveFeeSetting(); });
-                    feeInput.addEventListener('change', saveFeeSetting);
-                    feeInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') saveFeeSetting(); });
-                    feeCtrl.appendChild(feeSel);
-                    feeCtrl.appendChild(feeInput);
+                    syncInput.type = 'url';
+                    syncInput.placeholder = 'raw Gist URL';
+                    syncInput.value = getSetting('syncUrl') || '';
+                    var syncBtn = document.createElement('button');
+                    Object.assign(syncBtn.style, {
+                        background: 'transparent', color: fg, border: '1px solid ' + borderC,
+                        borderRadius: '8px', padding: '6px 8px', fontSize: '12px', cursor: 'pointer',
+                    });
+                    syncBtn.textContent = 'Pull';
+                    syncInput.addEventListener('change', function() {
+                        setSetting('syncUrl', syncInput.value.trim());
+                        refreshFeature(f);
+                    });
+                    syncBtn.addEventListener('click', function() {
+                        setSetting('syncUrl', syncInput.value.trim());
+                        pullSettingsSync(true);
+                    });
+                    syncCtrl.appendChild(syncInput);
+                    syncCtrl.appendChild(syncBtn);
                     row.appendChild(label);
-                    row.appendChild(feeCtrl);
+                    row.appendChild(syncCtrl);
                     box.appendChild(row);
                     return;
                 }
@@ -2226,9 +2803,7 @@
                     var cur = getSetting(f.key);
                     setSetting(f.key, !cur);
                     renderToggle(!cur);
-                    // Idempotent: always destroy first to avoid orphan observers/CSS
-                    try { f.destroy(); } catch(e) { /* silent */ }
-                    if (!cur) { try { f.init(); } catch(e) { console.error('[DD Enhanced] ' + f.key + ':', e); } }
+                    refreshFeature(f);
                 });
                 row.appendChild(label);
                 row.appendChild(toggle);
@@ -2276,14 +2851,14 @@
                 reader.onload = function(e) {
                     try {
                         var data = JSON.parse(e.target.result);
-                        features.forEach(function(f) { try { f.destroy(); } catch(ex) { /* silent */ } });
+                        features.forEach(function(f) { unmountFeature(f); });
                         Object.keys(data).forEach(function(key) {
                             if (key in DEFAULT_SETTINGS) setSetting(key, data[key]);
                         });
-                        panel.remove(); var bd4 = document.getElementById(SCRIPT_ID + '-backdrop'); if (bd4) bd4.remove();
+                        closeSettingsPanel();
                         location.reload();
                     } catch(err) {
-                        alert('Invalid settings file: ' + err.message);
+                        showToast('Invalid settings file: ' + err.message, true);
                     }
                 };
                 reader.readAsText(input.files[0]);
@@ -2303,11 +2878,10 @@
         });
         resetBtn.textContent = 'Reset All Settings';
         resetBtn.addEventListener('click', function() {
-            if (confirm('Reset all settings to defaults?')) {
-                features.forEach(function(f) { try { f.destroy(); } catch(e) {} setSetting(f.key, DEFAULT_SETTINGS[f.key]); });
-                panel.remove(); var bd3 = document.getElementById(SCRIPT_ID + '-backdrop'); if (bd3) bd3.remove();
-                location.reload();
-            }
+            features.forEach(function(f) { unmountFeature(f); setSetting(f.key, DEFAULT_SETTINGS[f.key]); });
+            closeSettingsPanel();
+            showToast('Settings reset');
+            location.reload();
         });
         content.appendChild(resetBtn);
         panel.appendChild(content);
@@ -2315,9 +2889,10 @@
         var backdrop = document.createElement('div');
         Object.assign(backdrop.style, { position: 'fixed', inset: '0', background: 'rgba(0,0,0,0.5)', zIndex: '99999' });
         backdrop.id = SCRIPT_ID + '-backdrop';
-        backdrop.addEventListener('click', function() { panel.remove(); backdrop.remove(); });
+        backdrop.addEventListener('click', closeSettingsPanel);
         document.body.appendChild(backdrop);
-        document.body.appendChild(panel);
+        root.appendChild(panel);
+        document.body.appendChild(host);
     }
 
 
@@ -2325,8 +2900,28 @@
     //  INIT
     // =====================================================================
     function init() {
+        document.documentElement.setAttribute('data-' + SCRIPT_ID + '-site', siteVariant());
         injectStyle(SCRIPT_ID + '-core', [
             '/* Custom overrides */',
+            '.' + SCRIPT_ID + '-allergen-badge, .' + SCRIPT_ID + '-unit-price, .' + SCRIPT_ID + '-price-increase, .' + SCRIPT_ID + '-fee-baseline, .' + SCRIPT_ID + '-fee-drop {',
+            '  display: inline-flex;',
+            '  align-items: center;',
+            '  margin-left: 6px;',
+            '  padding: 2px 6px;',
+            '  border-radius: 6px;',
+            '  font-size: 10px;',
+            '  font-weight: 700;',
+            '  line-height: 1.2;',
+            '}',
+            '.' + SCRIPT_ID + '-allergen-badge { background: rgba(255, 80, 40, 0.14); color: #ff5028; border: 1px solid rgba(255, 80, 40, 0.28); }',
+            '.' + SCRIPT_ID + '-unit-price { background: rgba(30, 136, 229, 0.14); color: #4aa3ff; border: 1px solid rgba(30, 136, 229, 0.28); }',
+            '.' + SCRIPT_ID + '-price-increase { background: rgba(255, 80, 40, 0.16); color: #ff5028; border: 1px solid rgba(255, 80, 40, 0.32); }',
+            '.' + SCRIPT_ID + '-fee-baseline { background: rgba(137, 180, 250, 0.16); color: #89b4fa; border: 1px solid rgba(137, 180, 250, 0.32); }',
+            '.' + SCRIPT_ID + '-fee-drop { background: rgba(166, 227, 161, 0.16); color: #5ac85a; border: 1px solid rgba(166, 227, 161, 0.32); }',
+            '[data-' + SCRIPT_ID + '-price-increase="true"] {',
+            '  outline: 1px solid rgba(255, 80, 40, 0.32) !important;',
+            '  outline-offset: 2px !important;',
+            '}',
             'div.StyledStackChildren-sc-yj3wxb-0.jNPkjN.sc-afac318a-0.dhGsxO {',
             '  background-color: transparent !important;',
             '}',
@@ -2380,17 +2975,7 @@
             '}',
         ].join('\n'));
 
-        features.forEach(function(f) {
-            if (f.custom) {
-                // Non-boolean features: check for non-'off' value
-                var val = getSetting(f.key);
-                if (val && val !== 'off') {
-                    try { f.init(); } catch(e) { console.error('[DD Enhanced] Init ' + f.key + ':', e); }
-                }
-            } else if (getSetting(f.key)) {
-                try { f.init(); } catch(e) { console.error('[DD Enhanced] Init ' + f.key + ':', e); }
-            }
-        });
+        features.forEach(function(f) { mountFeature(f); });
 
         setupSPAHandler();
         initHeaderButtons();
@@ -2400,7 +2985,7 @@
             var cur = getSetting('darkMode');
             setSetting('darkMode', !cur);
             var f = features.find(function(feat) { return feat.key === 'darkMode'; });
-            if (cur) f.destroy(); else f.init();
+            if (cur) unmountFeature(f); else mountFeature(f);
         });
         GM_registerMenuCommand('Focus Search', function() {
             var el = document.querySelector('[data-anchor-id="HeaderSearchInputField"]');
