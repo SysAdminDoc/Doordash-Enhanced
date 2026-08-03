@@ -64,6 +64,7 @@
         feeDropIndicator:    true,
         syncUrl:             '',
         language:            'en', // 'en', 'es', 'fr', or 'ca-en'
+        promoCodes:          '', // comma-separated user-supplied codes
     };
 
     var UI_COPY = {
@@ -77,6 +78,8 @@
             rawGistUrl: 'raw Gist URL', allergenPlaceholder: 'peanut, shellfish', exportSettings: 'Export Settings',
             importSettings: 'Import Settings', orderSummary: 'Order Summary', resetSettings: 'Reset All Settings',
             close: 'Close', lastTip: 'last: $', summaryTitle: 'Order Summary', invalidSettings: 'Invalid settings file: ',
+            promoLabel: 'Local codes', promoTry: 'Try codes', promoTryingButton: 'Trying…', promoTrying: 'Trying ', promoAccepted: 'Accepted ', promoNoMatch: 'No code was accepted', promoFieldMissing: 'Promo field is not visible', promoApplyMissing: 'Apply button is not visible', promoConfigure: 'Add comma-separated codes in Settings first', promoPlaceholder: 'SAVE10, WELCOME',
+            promoLabel: 'Local codes', promoTry: 'Try codes', promoTryingButton: 'Trying…', promoTrying: 'Trying ', promoAccepted: 'Accepted ', promoNoMatch: 'No code was accepted', promoFieldMissing: 'Promo field is not visible', promoApplyMissing: 'Apply button is not visible', promoConfigure: 'Add comma-separated codes in Settings first', promoPlaceholder: 'SAVE10, WELCOME',
         },
         es: {
             language: 'Idioma', languageDescription: 'Elige el idioma del panel de ajustes',
@@ -88,6 +91,8 @@
             rawGistUrl: 'URL de Gist sin formato', allergenPlaceholder: 'cacahuate, mariscos', exportSettings: 'Exportar ajustes',
             importSettings: 'Importar ajustes', orderSummary: 'Resumen de pedidos', resetSettings: 'Restablecer ajustes',
             close: 'Cerrar', lastTip: 'último: $', summaryTitle: 'Resumen de pedidos', invalidSettings: 'Archivo de ajustes no válido: ',
+            promoLabel: 'Códigos locales', promoTry: 'Probar códigos', promoTryingButton: 'Probando…', promoTrying: 'Probando ', promoAccepted: 'Aceptado ', promoNoMatch: 'No se aceptó ningún código', promoFieldMissing: 'El campo de promoción no está visible', promoApplyMissing: 'El botón Aplicar no está visible', promoConfigure: 'Añade códigos separados por comas en Ajustes', promoPlaceholder: 'AHORRO10, BIENVENIDA',
+            promoLabel: 'Códigos locales', promoTry: 'Probar códigos', promoTryingButton: 'Probando…', promoTrying: 'Probando ', promoAccepted: 'Aceptado ', promoNoMatch: 'No se aceptó ningún código', promoFieldMissing: 'El campo de promoción no está visible', promoApplyMissing: 'El botón Aplicar no está visible', promoConfigure: 'Añade códigos separados por comas en Ajustes', promoPlaceholder: 'AHORRO10, BIENVENIDA',
         },
         fr: {
             language: 'Langue', languageDescription: 'Choisissez la langue du panneau de réglages',
@@ -99,6 +104,8 @@
             rawGistUrl: 'URL Gist brute', allergenPlaceholder: 'arachide, fruits de mer', exportSettings: 'Exporter les réglages',
             importSettings: 'Importer les réglages', orderSummary: 'Résumé des commandes', resetSettings: 'Réinitialiser les réglages',
             close: 'Fermer', lastTip: 'dernier : $', summaryTitle: 'Résumé des commandes', invalidSettings: 'Fichier de réglages invalide : ',
+            promoLabel: 'Codes locaux', promoTry: 'Essayer les codes', promoTryingButton: 'Essai…', promoTrying: 'Essai de ', promoAccepted: 'Accepté : ', promoNoMatch: 'Aucun code accepté', promoFieldMissing: 'Le champ promo est invisible', promoApplyMissing: 'Le bouton Appliquer est invisible', promoConfigure: 'Ajoutez des codes séparés par des virgules dans les réglages', promoPlaceholder: 'RABAIS10, BIENVENUE',
+            promoLabel: 'Codes locaux', promoTry: 'Essayer les codes', promoTryingButton: 'Essai…', promoTrying: 'Essai de ', promoAccepted: 'Accepté : ', promoNoMatch: 'Aucun code accepté', promoFieldMissing: 'Le champ promo est invisible', promoApplyMissing: 'Le bouton Appliquer est invisible', promoConfigure: 'Ajoutez des codes séparés par des virgules dans les réglages', promoPlaceholder: 'RABAIS10, BIENVENUE',
         },
         'ca-en': {
             language: 'Language', languageDescription: 'Choose the settings-panel language',
@@ -110,6 +117,8 @@
             rawGistUrl: 'raw Gist URL', allergenPlaceholder: 'peanut, shellfish', exportSettings: 'Export Settings',
             importSettings: 'Import Settings', orderSummary: 'Order Summary', resetSettings: 'Reset All Settings',
             close: 'Close', lastTip: 'last: $', summaryTitle: 'Order Summary', invalidSettings: 'Invalid settings file: ',
+            promoLabel: 'Local codes', promoTry: 'Try codes', promoTryingButton: 'Trying…', promoTrying: 'Trying ', promoAccepted: 'Accepted ', promoNoMatch: 'No code was accepted', promoFieldMissing: 'Promo field is not visible', promoApplyMissing: 'Apply button is not visible', promoConfigure: 'Add comma-separated codes in Settings first', promoPlaceholder: 'SAVE10, WELCOME',
+            promoLabel: 'Local codes', promoTry: 'Try codes', promoTryingButton: 'Trying…', promoTrying: 'Trying ', promoAccepted: 'Accepted ', promoNoMatch: 'No code was accepted', promoFieldMissing: 'Promo field is not visible', promoApplyMissing: 'Apply button is not visible', promoConfigure: 'Add comma-separated codes in Settings first', promoPlaceholder: 'SAVE10, WELCOME',
         },
     };
 
@@ -120,13 +129,13 @@
             blockSponsoredCards: ['Ocultar anuncios patrocinados', 'Elimina tarjetas, carruseles y artículos patrocinados'], feeHighlighter: ['Resaltador de tarifas', 'Colorea las tarifas en la página de pago'], autoExpandFees: ['Expandir tarifas automáticamente', 'Expande el desglose de tarifas en el pago'],
             priceCalculator: ['Calculadora de precio acumulado', 'Muestra el total estimado al explorar un menú'], hideHeroCarousel: ['Ocultar carrusel principal', 'Elimina el carrusel promocional de la página de inicio'], cleanFooter: ['Limpiar pie de página', 'Simplifica el pie de página'], hideTurnstile: ['Ocultar banners de Turnstile', 'Oculta banners de verificación cuando no son necesarios'], stickyCart: ['Botón de carrito fijo', 'Mantén visible el botón del carrito'],
             quickSearch: ['Historial de búsqueda', 'Recuerda y sugiere búsquedas anteriores'], hideElectronics: ['Ocultar electrónica', 'Elimina la categoría Electrónica de la barra lateral'], tipDefault: ['Propina predeterminada', 'Selecciona automáticamente tu propina preferida'], checkoutFlair: ['Estilo de pago', 'Aspecto refinado para la página de pago'], storePolish: ['Pulido de tienda', 'Mejora el diseño de tiendas y el modo oscuro'], visualFlair: ['Detalles visuales y animaciones', 'Insignias animadas y microinteracciones'],
-            theme: ['Tema', 'Paleta de colores: Mocha, Frappé, Macchiato o Latte'], cardDensity: ['Densidad de tarjetas', 'Diseño de tarjetas cómodo, compacto o denso'], maxDeliveryFee: ['Ocultar tarifas de entrega altas', 'Oculta restaurantes sobre tu límite'], minimalistMode: ['Modo minimalista', 'Oculta insignias e imágenes para una vista más limpia'], unitPriceCalculator: ['Calculadora por unidad', 'Muestra el precio por onza o por 100 g'], allergenFilter: ['Filtro de alérgenos', 'Atenúa artículos que coinciden con tu lista'], deliveryFeeBaseline: ['Referencia de tarifa de entrega', 'Compara tarifas visibles con tu mediana'], priceIncreaseDetector: ['Detector de aumentos', 'Resalta artículos más caros que la última vez'], reorderLast: ['Repetir último pedido', 'Muestra un botón para tu restaurante visitado más reciente'], orderHistory: ['Historial de pedidos', 'Recuerda entradas visibles y permite exportarlas'], portionCalculator: ['Precio por porción', 'Estima el precio por persona en pedidos grupales'], stickyOrderSummary: ['Resumen de pedido fijo', 'Mantén visible el resumen durante el desplazamiento'], feeDropIndicator: ['Indicador de reducción', 'Marca las tarifas que bajan durante la sesión'], syncUrl: ['URL de sincronización', 'Carga ajustes desde un Gist JSON configurado'], language: ['Idioma', 'Elige el idioma del panel de ajustes'],
+            theme: ['Tema', 'Paleta de colores: Mocha, Frappé, Macchiato o Latte'], cardDensity: ['Densidad de tarjetas', 'Diseño de tarjetas cómodo, compacto o denso'], maxDeliveryFee: ['Ocultar tarifas de entrega altas', 'Oculta restaurantes sobre tu límite'], minimalistMode: ['Modo minimalista', 'Oculta insignias e imágenes para una vista más limpia'], unitPriceCalculator: ['Calculadora por unidad', 'Muestra el precio por onza o por 100 g'], allergenFilter: ['Filtro de alérgenos', 'Atenúa artículos que coinciden con tu lista'], deliveryFeeBaseline: ['Referencia de tarifa de entrega', 'Compara tarifas visibles con tu mediana'], priceIncreaseDetector: ['Detector de aumentos', 'Resalta artículos más caros que la última vez'], reorderLast: ['Repetir último pedido', 'Muestra un botón para tu restaurante visitado más reciente'], orderHistory: ['Historial de pedidos', 'Recuerda entradas visibles y permite exportarlas'], portionCalculator: ['Precio por porción', 'Estima el precio por persona en pedidos grupales'], stickyOrderSummary: ['Resumen de pedido fijo', 'Mantén visible el resumen durante el desplazamiento'], feeDropIndicator: ['Indicador de reducción', 'Marca las tarifas que bajan durante la sesión'], syncUrl: ['URL de sincronización', 'Carga ajustes desde un Gist JSON configurado'], promoCodes: ['Ayudante de códigos promocionales', 'Prueba tus propios códigos sin servicios de afiliados'], language: ['Idioma', 'Elige el idioma del panel de ajustes'],
         },
         fr: {
-            darkMode: ['Mode sombre', 'Thème sombre complet via les variables Prism'], wideLayout: ['Mise en page large', 'Utilise toute la largeur du navigateur'], blockDashPassPromos: ['Bloquer les promotions DashPass', 'Masque les bannières et promotions DashPass'], blockPopups: ['Bloquer les fenêtres promotionnelles', 'Ferme les modales et panneaux promotionnels'], blockSponsoredCards: ['Masquer les annonces sponsorisées', 'Supprime les cartes, carrousels et articles sponsorisés'], feeHighlighter: ['Surlignage des frais', 'Colore les frais sur la page de paiement'], autoExpandFees: ['Développer les frais automatiquement', 'Développe le détail des frais au paiement'], priceCalculator: ['Calculateur de prix courant', 'Affiche le total estimé pendant la navigation'], hideHeroCarousel: ['Masquer le carrousel principal', 'Supprime le carrousel promotionnel de l’accueil'], cleanFooter: ['Nettoyer le pied de page', 'Simplifie le pied de page'], hideTurnstile: ['Masquer les bannières Turnstile', 'Masque les bannières de vérification inutiles'], stickyCart: ['Bouton panier fixe', 'Garde le bouton panier visible'], quickSearch: ['Historique des recherches', 'Mémorise et suggère les recherches précédentes'], hideElectronics: ['Masquer l’électronique', 'Supprime la catégorie Électronique'], tipDefault: ['Pourboire par défaut', 'Sélectionne automatiquement votre pourboire'], checkoutFlair: ['Style du paiement', 'Aspect soigné pour le paiement'], storePolish: ['Finition de la boutique', 'Améliore la mise en page des boutiques'], visualFlair: ['Détails visuels et animations', 'Badges animés et micro-interactions'], theme: ['Thème', 'Palette Mocha, Frappé, Macchiato ou Latte'], cardDensity: ['Densité des cartes', 'Mise en page confortable, compacte ou dense'], maxDeliveryFee: ['Masquer les frais élevés', 'Masque les restaurants au-dessus du seuil'], minimalistMode: ['Mode minimaliste', 'Masque les badges et images'], unitPriceCalculator: ['Calculateur à l’unité', 'Affiche le prix à l’once ou pour 100 g'], allergenFilter: ['Filtre d’allergènes', 'Atténue les articles correspondant à votre liste'], deliveryFeeBaseline: ['Référence des frais', 'Compare les frais visibles à votre médiane'], priceIncreaseDetector: ['Détecteur de hausse', 'Surligne les articles plus chers qu’avant'], reorderLast: ['Recommander le dernier', 'Affiche un bouton pour votre dernier restaurant'], orderHistory: ['Historique des commandes', 'Mémorise les commandes visibles et les exporte'], portionCalculator: ['Prix par portion', 'Estime le prix par personne pour les commandes groupées'], stickyOrderSummary: ['Résumé fixe', 'Garde le résumé visible pendant le défilement'], feeDropIndicator: ['Indicateur de baisse', 'Signale les frais réduits pendant la session'], syncUrl: ['URL de synchronisation', 'Charge les réglages depuis un Gist JSON'], language: ['Langue', 'Choisissez la langue du panneau'],
+            darkMode: ['Mode sombre', 'Thème sombre complet via les variables Prism'], wideLayout: ['Mise en page large', 'Utilise toute la largeur du navigateur'], blockDashPassPromos: ['Bloquer les promotions DashPass', 'Masque les bannières et promotions DashPass'], blockPopups: ['Bloquer les fenêtres promotionnelles', 'Ferme les modales et panneaux promotionnels'], blockSponsoredCards: ['Masquer les annonces sponsorisées', 'Supprime les cartes, carrousels et articles sponsorisés'], feeHighlighter: ['Surlignage des frais', 'Colore les frais sur la page de paiement'], autoExpandFees: ['Développer les frais automatiquement', 'Développe le détail des frais au paiement'], priceCalculator: ['Calculateur de prix courant', 'Affiche le total estimé pendant la navigation'], hideHeroCarousel: ['Masquer le carrousel principal', 'Supprime le carrousel promotionnel de l’accueil'], cleanFooter: ['Nettoyer le pied de page', 'Simplifie le pied de page'], hideTurnstile: ['Masquer les bannières Turnstile', 'Masque les bannières de vérification inutiles'], stickyCart: ['Bouton panier fixe', 'Garde le bouton panier visible'], quickSearch: ['Historique des recherches', 'Mémorise et suggère les recherches précédentes'], hideElectronics: ['Masquer l’électronique', 'Supprime la catégorie Électronique'], tipDefault: ['Pourboire par défaut', 'Sélectionne automatiquement votre pourboire'], checkoutFlair: ['Style du paiement', 'Aspect soigné pour le paiement'], storePolish: ['Finition de la boutique', 'Améliore la mise en page des boutiques'], visualFlair: ['Détails visuels et animations', 'Badges animés et micro-interactions'], theme: ['Thème', 'Palette Mocha, Frappé, Macchiato ou Latte'], cardDensity: ['Densité des cartes', 'Mise en page confortable, compacte ou dense'], maxDeliveryFee: ['Masquer les frais élevés', 'Masque les restaurants au-dessus du seuil'], minimalistMode: ['Mode minimaliste', 'Masque les badges et images'], unitPriceCalculator: ['Calculateur à l’unité', 'Affiche le prix à l’once ou pour 100 g'], allergenFilter: ['Filtre d’allergènes', 'Atténue les articles correspondant à votre liste'], deliveryFeeBaseline: ['Référence des frais', 'Compare les frais visibles à votre médiane'], priceIncreaseDetector: ['Détecteur de hausse', 'Surligne les articles plus chers qu’avant'], reorderLast: ['Recommander le dernier', 'Affiche un bouton pour votre dernier restaurant'], orderHistory: ['Historique des commandes', 'Mémorise les commandes visibles et les exporte'], portionCalculator: ['Prix par portion', 'Estime le prix par personne pour les commandes groupées'], stickyOrderSummary: ['Résumé fixe', 'Garde le résumé visible pendant le défilement'], feeDropIndicator: ['Indicateur de baisse', 'Signale les frais réduits pendant la session'], syncUrl: ['URL de synchronisation', 'Charge les réglages depuis un Gist JSON'], promoCodes: ['Assistant de codes promotionnels', 'Essaie vos propres codes sans services affiliés'], language: ['Langue', 'Choisissez la langue du panneau'],
         },
         'ca-en': {
-            orderHistory: ['Order History Log', 'Remember visible Orders-page entries and export them locally'], portionCalculator: ['Price per Portion', 'Estimate the per-person price on group-order items'], language: ['Language', 'Choose the settings-panel language'],
+            orderHistory: ['Order History Log', 'Remember visible Orders-page entries and export them locally'], portionCalculator: ['Price per Portion', 'Estimate the per-person price on group-order items'], promoCodes: ['Local Promo Code Helper', 'Try your own codes without affiliate services'], language: ['Language', 'Choose the settings-panel language'],
         },
     };
 
@@ -503,6 +512,27 @@
             entryMatcher: isCheckoutPage,
             init: function() { initTipDefault(); },
             destroy: function() { destroyTipDefault(); }
+        },
+
+        // -- LOCAL PROMO CODE HELPER --------------------------------------
+        {
+            key: 'promoCodes',
+            name: 'Local Promo Code Helper',
+            group: 'Checkout',
+            desc: 'Try your own comma-separated promo codes without affiliate services',
+            custom: true,
+            entryMatcher: isCheckoutPage,
+            init: function() {
+                renderPromoHelper();
+                this._obs = safeObserver(function() { renderPromoHelper(); });
+            },
+            destroy: function() {
+                _promoRunToken++;
+                _promoRunning = false;
+                if (this._obs) this._obs.disconnect();
+                var helper = document.getElementById(SCRIPT_ID + '-promo-helper');
+                if (helper) helper.remove();
+            }
         },
 
         // -- CHECKOUT FLAIR -----------------------------------------------
@@ -2525,6 +2555,124 @@
         root.appendChild(backdrop); root.appendChild(panel); document.body.appendChild(host);
     }
 
+    var _promoRunning = false;
+    var _promoRunToken = 0;
+
+    function configuredPromoCodes() {
+        return String(getSetting('promoCodes') || '').split(',').map(function(code) { return code.trim(); }).filter(Boolean).slice(0, 20);
+    }
+
+    function findPromoInput() {
+        return document.querySelector('input[placeholder*="promo" i], input[aria-label*="promo" i], input[name*="promo" i], input[data-testid*="promo" i]');
+    }
+
+    function findPromoApplyButton(input) {
+        var area = input && (input.closest('form') || input.parentElement);
+        var buttons = area ? area.querySelectorAll('button') : document.querySelectorAll('button');
+        for (var i = 0; i < buttons.length; i++) {
+            if (/(apply|redeem|add|save)/i.test(buttons[i].textContent || '') && !buttons[i].disabled) return buttons[i];
+        }
+        return null;
+    }
+
+    function setPromoInput(input, value) {
+        var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+        if (setter && setter.set) setter.set.call(input, value); else input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function promoStatus(text) {
+        var status = document.getElementById(SCRIPT_ID + '-promo-status');
+        if (status) status.textContent = text;
+    }
+
+    function tryNextPromoCode(codes, index, token) {
+        if (token !== _promoRunToken || !_promoRunning) return;
+        if (index >= codes.length) {
+            _promoRunning = false;
+            promoStatus(t('promoNoMatch', 'No code was accepted'));
+            renderPromoHelper();
+            return;
+        }
+        var input = findPromoInput();
+        if (!input) {
+            _promoRunning = false;
+            promoStatus(t('promoFieldMissing', 'Promo field is not visible'));
+            renderPromoHelper();
+            return;
+        }
+        var code = codes[index];
+        promoStatus(t('promoTrying', 'Trying ') + code + ' (' + (index + 1) + '/' + codes.length + ')');
+        setPromoInput(input, code);
+        var apply = findPromoApplyButton(input);
+        if (!apply) {
+            _promoRunning = false;
+            promoStatus(t('promoApplyMissing', 'Apply button is not visible'));
+            renderPromoHelper();
+            return;
+        }
+        apply.click();
+        setTimeout(function() {
+            if (token !== _promoRunToken || !_promoRunning) return;
+            var area = input.closest('form') || input.parentElement || document.body;
+            var text = area.textContent || '';
+            var rejected = /(invalid|expired|not valid|does not work|doesn't work|unable)/i.test(text);
+            var accepted = !rejected && /(applied|discount|saved|free delivery|promo code added)/i.test(text);
+            if (accepted) {
+                _promoRunning = false;
+                promoStatus(t('promoAccepted', 'Accepted ') + code);
+                renderPromoHelper();
+            } else {
+                tryNextPromoCode(codes, index + 1, token);
+            }
+        }, 900);
+    }
+
+    function runPromoCodeTrial() {
+        var codes = configuredPromoCodes();
+        if (!codes.length) { showToast(t('promoConfigure', 'Add comma-separated codes in Settings first'), true); return; }
+        _promoRunning = true;
+        _promoRunToken++;
+        tryNextPromoCode(codes, 0, _promoRunToken);
+        renderPromoHelper();
+    }
+
+    function renderPromoHelper() {
+        var existing = document.getElementById(SCRIPT_ID + '-promo-helper');
+        if (!isCheckoutPage() || !configuredPromoCodes().length) {
+            if (existing) existing.remove();
+            return;
+        }
+        if (!existing) {
+            existing = document.createElement('div');
+            existing.id = SCRIPT_ID + '-promo-helper';
+            Object.assign(existing.style, {
+                position: 'fixed', left: '18px', bottom: '24px', zIndex: '99998',
+                display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', borderRadius: '12px',
+                background: 'var(--usage-color-background-elevated-default, #1e1e2e)',
+                color: 'var(--usage-color-text-default, #fff)', boxShadow: '0 10px 28px rgba(0,0,0,0.24)',
+            });
+            var label = document.createElement('span');
+            label.textContent = t('promoLabel', 'Local codes');
+            label.style.cssText = 'font-size:12px;font-weight:700';
+            var status = document.createElement('span');
+            status.id = SCRIPT_ID + '-promo-status';
+            status.style.cssText = 'font-size:11px;color:#aaa;max-width:180px';
+            var button = document.createElement('button');
+            button.id = SCRIPT_ID + '-promo-run';
+            Object.assign(button.style, { border: '1px solid rgba(255,48,8,0.4)', borderRadius: '7px', padding: '5px 8px', background: 'transparent', color: 'inherit', cursor: 'pointer', fontSize: '11px', fontWeight: '700' });
+            button.addEventListener('click', runPromoCodeTrial);
+            existing.appendChild(label); existing.appendChild(status); existing.appendChild(button); document.body.appendChild(existing);
+        }
+        var runButton = document.getElementById(SCRIPT_ID + '-promo-run');
+        if (runButton) {
+            runButton.disabled = _promoRunning;
+            runButton.textContent = _promoRunning ? t('promoTryingButton', 'Trying…') : t('promoTry', 'Try codes');
+            runButton.style.opacity = _promoRunning ? '0.55' : '1';
+        }
+    }
+
     function pullSettingsSync(showSuccess) {
         var url = String(getSetting('syncUrl') || '').trim();
         if (!url || !/^https:\/\/gist\.githubusercontent\.com\//i.test(url)) return;
@@ -3291,6 +3439,27 @@
                     });
                     row.appendChild(label);
                     row.appendChild(allergyInput);
+                    box.appendChild(row);
+                    return;
+                }
+
+                // --- Custom UI for local promo codes ---
+                if (f.key === 'promoCodes') {
+                    var promoInput = document.createElement('input');
+                    Object.assign(promoInput.style, {
+                        width: '175px', background: isDark ? '#222230' : '#f0f0f0', color: fg,
+                        border: '1px solid ' + borderC, borderRadius: '8px',
+                        padding: '6px 8px', fontSize: '13px', outline: 'none', marginLeft: '12px',
+                    });
+                    promoInput.type = 'text';
+                    promoInput.placeholder = t('promoPlaceholder', 'SAVE10, WELCOME');
+                    promoInput.value = getSetting('promoCodes') || '';
+                    promoInput.addEventListener('change', function() {
+                        setSetting('promoCodes', promoInput.value.trim());
+                        refreshFeature(f);
+                    });
+                    row.appendChild(label);
+                    row.appendChild(promoInput);
                     box.appendChild(row);
                     return;
                 }

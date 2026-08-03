@@ -13,6 +13,7 @@ All notable changes to Doordash-Enhanced will be documented in this file.
 - Added: Dasher web-view matching and scoped dark-surface overrides for the delivery-driver interface.
 - Added: Individual boolean-feature toggles to the Tampermonkey/Violentmonkey menu.
 - Added: A standalone uBlock Origin/AdGuard cosmetic filter list for DoorDash promotions and sponsored surfaces.
+- Added: A user-triggered local promo-code helper that tries comma-separated codes without affiliate services.
 - Changed: Removed Alt keyboard shortcuts, added Trusted Types coverage, isolated the settings panel in Shadow DOM, and hardened SPA feature lifecycle cleanup.
 - Changed: Page-bound features now lazy-mount on matching routes and CSS-only styles share one idle-safe bundle.
 

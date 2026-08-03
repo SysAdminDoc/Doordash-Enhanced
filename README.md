@@ -69,6 +69,7 @@ Users who only need cosmetic blocking can subscribe to the standalone [DoorDash 
 | Feature | Description | Default |
 |---------|-------------|---------|
 | Default Tip | Three modes: **Off**, **Remember Last** (saves your tip choice and auto-selects it next checkout), or **Fixed Amount** (enter a dollar amount that's always applied). If the amount matches a preset button it clicks it; otherwise it fills the "Other" custom input | **Off** |
+| Local Promo Code Helper | Stores user-supplied comma-separated codes and tries them only after you click the checkout helper button; no affiliate or coupon service is contacted | **Off** |
 
 ### Utilities
 
@@ -140,6 +141,8 @@ The **Default Tip** feature uses a dropdown selector:
 - **Off** — No tip automation
 - **Remember Last** — Stores the last tip you selected and auto-picks it next time
 - **Fixed Amount** — Shows a `$ [____]` input where you set a specific dollar amount
+
+The **Local Promo Code Helper** accepts comma-separated codes such as `SAVE10, WELCOME`. On checkout, click **Try codes** to submit them one at a time and report the first accepted code.
 
 **Reset All Settings** is available at the bottom of the panel to restore defaults.
 
