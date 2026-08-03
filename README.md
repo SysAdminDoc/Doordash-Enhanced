@@ -18,7 +18,17 @@
 2. [**Click here to install DoorDash Enhanced**](https://github.com/SysAdminDoc/Doordash-Enhanced/raw/refs/heads/main/DoorDashEnhanced.user.js)
 3. Confirm the installation when prompted
 
-To access settings, press **Alt+P** or click the gear icon in the DoorDash header bar.
+To access settings, click the gear icon in the DoorDash header bar or use the Tampermonkey/Violentmonkey menu command.
+
+### Optional Chrome extension build
+
+The same feature source can be built as an unpacked Chrome MV3 extension:
+
+```bash
+node scripts/build-extension.js
+```
+
+Then open `chrome://extensions`, enable **Developer mode**, and choose **Load unpacked** for the `extension` directory. The build uses local browser storage as its `GM_*` compatibility layer.
 
 ---
 
@@ -62,7 +72,7 @@ To access settings, press **Alt+P** or click the gear icon in the DoorDash heade
 |---------|-------------|---------|
 | Running Price Calculator | Displays an estimated running total while browsing a store menu | **On** |
 | Sticky Cart Button | Keeps the cart button visible while scrolling | **On** |
-| Keyboard Shortcuts | `Alt+S` search, `Alt+C` cart, `Alt+H` home, `Alt+O` orders, `Alt+P` settings | **On** |
+| Menu Actions | Settings, dark mode, search, cart, home, and orders are available from the header buttons and userscript-manager menu | **On** |
 | Search History | Remembers previous searches and provides autocomplete suggestions | **On** |
 | Order History Log | Locally remembers visible Orders-page entries and exports CSV/JSON with a spending summary | **On** |
 
@@ -115,9 +125,8 @@ To access settings, press **Alt+P** or click the gear icon in the DoorDash heade
 
 All features are togglable from the built-in settings panel:
 
-- **Alt+P** — Open the settings panel from any DoorDash page
 - **Gear icon** — Click the gear icon injected into the DoorDash header bar
-- **Tampermonkey menu** — Right-click the Tampermonkey icon → "Open Settings"
+- **Userscript-manager menu** — Open settings or run navigation actions from the Tampermonkey/Violentmonkey menu
 
 Settings are organized into groups: Appearance, Ad Blocking, Transparency, Checkout, Utilities, and UI Cleanup. Each feature can be independently enabled or disabled with instant apply/remove — no page reload required.
 
@@ -132,15 +141,12 @@ The **Default Tip** feature uses a dropdown selector:
 
 ---
 
-## Keyboard Shortcuts
+## Menu Actions
 
-| Shortcut | Action |
-|----------|--------|
-| `Alt + P` | Open/close settings panel |
-| `Alt + S` | Focus search bar |
-| `Alt + C` | Open cart |
-| `Alt + H` | Navigate to home |
-| `Alt + O` | Navigate to orders |
+| Entry point | Action |
+|------------|--------|
+| Gear icon | Open/close settings panel |
+| Userscript-manager menu | Open settings, toggle dark mode, focus search, open cart, go home, or open orders |
 
 ---
 

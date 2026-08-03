@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "DoorDash Enhanced",
+  "version": "2.8.0",
+  "description": "DoorDash dark mode, fee transparency, checkout automation, and local utilities.",
+  "action": {
+    "default_title": "DoorDash Enhanced"
+  },
+  "host_permissions": [
+    "https://gist.githubusercontent.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.doordash.com/*",
+        "https://doordash.com/*",
+        "https://dasher.doordash.com/*",
+        "https://www.doordash.ca/*",
+        "https://doordash.ca/*",
+        "https://www.doordash.com.au/*",
+        "https://doordash.com.au/*",
+        "https://www.dash.com/*",
+        "https://dash.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

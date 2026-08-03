@@ -25,3 +25,7 @@ jobs:
         run: node --test tests/userscript-contract.test.js
       - name: Check JavaScript syntax
         run: node --check DoorDashEnhanced.user.js
+      - name: Check companion extension build
+        run: node scripts/build-extension.js --check
+      - name: Check companion extension syntax
+        run: node --check extension/content.js

@@ -3,6 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'DoorDashEnhanced.user.js'), 'utf8');
+const extensionContent = fs.readFileSync(path.join(__dirname, '..', 'extension', 'content.js'), 'utf8');
+const extensionManifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'extension', 'manifest.json'), 'utf8'));
 
 const headerVersion = source.match(/@version\s+([0-9]+\.[0-9]+\.[0-9]+)/);
 const runtimeVersion = source.match(/var VERSION\s*=\s*'([^']+)'/);
@@ -22,5 +24,8 @@ assert.ok(source.includes('feature._mountToken'), 'feature mounting must guard a
 assert.ok(source.includes('scheduledHandle.cancel()'), 'observer teardown must cancel pending idle work');
 assert.ok(source.includes("var CSS_BUNDLE_ID = SCRIPT_ID + '-styles';"), 'CSS-only features must share one style bundle');
 assert.ok(source.includes('entryMatcher: isCheckoutPage'), 'page-bound features must declare an entry matcher');
+assert.equal(extensionManifest.version, headerVersion[1], 'companion manifest version must match the userscript');
+assert.ok(extensionContent.includes("window.GM_getValue = function"), 'companion build must include the GM_getValue shim');
+assert.ok(!extensionContent.includes('// ==UserScript=='), 'companion build must not embed userscript metadata');
 
 console.log('userscript contract checks passed');

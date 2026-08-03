@@ -9,6 +9,7 @@ All notable changes to Doordash-Enhanced will be documented in this file.
 - Added: Local Orders-page history with one-tap CSV/JSON export and a spending summary dashboard.
 - Added: Per-portion price estimates for group-order items with serving counts.
 - Added: English, Spanish, French, and Canadian English settings-panel localization with an in-panel language selector.
+- Added: An MV3 companion-extension build generated from the userscript with a local `GM_*` compatibility shim.
 - Changed: Removed Alt keyboard shortcuts, added Trusted Types coverage, isolated the settings panel in Shadow DOM, and hardened SPA feature lifecycle cleanup.
 - Changed: Page-bound features now lazy-mount on matching routes and CSS-only styles share one idle-safe bundle.
 
