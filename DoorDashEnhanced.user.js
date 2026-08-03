@@ -100,7 +100,6 @@
             group: 'Appearance',
             desc: 'Full dark theme via Prism variable overrides',
             styleId: SCRIPT_ID + '-dark',
-            immediate: true,
             init: function() { injectStyle(this.styleId, darkModeCSS()); },
             destroy: function() { removeStyle(this.styleId); }
         },
@@ -369,26 +368,43 @@
             group: 'Utilities',
             desc: 'Remember and suggest previous searches',
             init: function() {
+                var self = this;
+                self._inputs = [];
+                function enhanceInput(input) {
+                    if (!input || input.dataset.ddEnhanced) return;
+                    input.dataset.ddEnhanced = 'true';
+                    var onFocus = function() {
+                        var h = getJsonValue('search_history', []);
+                        if (h.length > 0) showSearchHistory(input, h);
+                    };
+                    var onKeydown = function(e) {
+                        if (e.key === 'Enter' && input.value.trim()) {
+                            var h = getJsonValue('search_history', []);
+                            var val = input.value.trim();
+                            setJsonValue('search_history', [val].concat(h.filter(function(x) { return x !== val; })).slice(0, 10));
+                        }
+                    };
+                    input.addEventListener('focus', onFocus);
+                    input.addEventListener('keydown', onKeydown);
+                    self._inputs.push({ input: input, onFocus: onFocus, onKeydown: onKeydown });
+                }
                 this._obs = safeObserver(function(node) {
                     var input = (node.matches && node.matches('[data-anchor-id="HeaderSearchInputField"]')) ? node :
                                 (node.querySelector ? node.querySelector('[data-anchor-id="HeaderSearchInputField"]') : null);
-                    if (input && !input.dataset.ddEnhanced) {
-                        input.dataset.ddEnhanced = 'true';
-                        input.addEventListener('focus', function() {
-                            var h = JSON.parse(GM_getValue(SCRIPT_ID + '_search_history', '[]'));
-                            if (h.length > 0) showSearchHistory(input, h);
-                        });
-                        input.addEventListener('keydown', function(e) {
-                            if (e.key === 'Enter' && input.value.trim()) {
-                                var h = JSON.parse(GM_getValue(SCRIPT_ID + '_search_history', '[]'));
-                                var val = input.value.trim();
-                                GM_setValue(SCRIPT_ID + '_search_history', JSON.stringify([val].concat(h.filter(function(x) { return x !== val; })).slice(0, 10)));
-                            }
-                        });
-                    }
+                    enhanceInput(input);
                 });
             },
-            destroy: function() { if (this._obs) this._obs.disconnect(); var el = document.getElementById(SCRIPT_ID + '-search-history'); if (el) el.remove(); }
+            destroy: function() {
+                if (this._obs) this._obs.disconnect();
+                (this._inputs || []).forEach(function(binding) {
+                    binding.input.removeEventListener('focus', binding.onFocus);
+                    binding.input.removeEventListener('keydown', binding.onKeydown);
+                    delete binding.input.dataset.ddEnhanced;
+                });
+                this._inputs = [];
+                var el = document.getElementById(SCRIPT_ID + '-search-history');
+                if (el) el.remove();
+            }
         },
 
         // -- HIDE ELECTRONICS SIDEBAR -------------------------------------
@@ -458,7 +474,6 @@
             desc: 'Color palette: Mocha (dark), Frappé, Macchiato, or Latte (light)',
             custom: true,
             styleId: SCRIPT_ID + '-catppuccin',
-            immediate: true,
             init: function() { injectStyle(this.styleId, catppuccinThemeCSS(getSetting('theme') || 'mocha')); },
             destroy: function() { removeStyle(this.styleId); }
         },
@@ -1314,6 +1329,8 @@
     //  DEFAULT TIP - Auto-select preferred tip on checkout
     // =====================================================================
     var _tipObs = null;
+    var _tipGroup = null;
+    var _tipWatchHandler = null;
     var _tipApplied = false;
 
     function initTipDefault() {
@@ -1325,6 +1342,13 @@
 
     function destroyTipDefault() {
         if (_tipObs) { _tipObs.disconnect(); _tipObs = null; }
+        if (_tipGroup && _tipWatchHandler) {
+            _tipGroup.removeEventListener('click', _tipWatchHandler);
+            delete _tipGroup.dataset.ddTipWatching;
+        }
+        _tipGroup = null;
+        _tipWatchHandler = null;
+        _tipApplied = false;
     }
 
     function applyTipDefault() {
@@ -1336,9 +1360,14 @@
         if (!group) return;
 
         // Attach save-on-click listeners (for "remember" mode)
-        if (!group.dataset.ddTipWatching) {
-            group.dataset.ddTipWatching = '1';
-            group.addEventListener('click', function(e) {
+        if (_tipGroup !== group) {
+            if (_tipGroup && _tipWatchHandler) {
+                _tipGroup.removeEventListener('click', _tipWatchHandler);
+                delete _tipGroup.dataset.ddTipWatching;
+            }
+            _tipGroup = group;
+            _tipGroup.dataset.ddTipWatching = '1';
+            _tipWatchHandler = function(e) {
                 var btn = e.target.closest('[data-anchor-id="TipPickerOption"]');
                 if (!btn) return;
                 setTimeout(function() {
@@ -1351,7 +1380,8 @@
                         GM_setValue(SCRIPT_ID + '_tipLastAmount', amount);
                     }
                 }, 100);
-            });
+            };
+            _tipGroup.addEventListener('click', _tipWatchHandler);
         }
 
         var targetAmount;
@@ -2232,12 +2262,23 @@
     // =====================================================================
     //  UTILITIES
     // =====================================================================
+    function setAttributeIfChanged(element, name, value) {
+        if (!element) return false;
+        var next = String(value);
+        if (element.getAttribute(name) === next) return false;
+        element.setAttribute(name, next);
+        return true;
+    }
+
     function injectStyle(id, css) {
+        var existing = document.getElementById(id);
+        if (existing && existing.textContent === css) return existing;
         removeStyle(id);
         var el = document.createElement('style');
         el.id = id;
         el.textContent = css;
         (document.head || document.documentElement).appendChild(el);
+        return el;
     }
     function removeStyle(id) { var el = document.getElementById(id); if (el) el.remove(); }
     function isStorePage() { return /\/store\//.test(location.pathname); }
@@ -2251,12 +2292,59 @@
     }
 
     function runIdle(callback, timeout) {
-        var ric = window.requestIdleCallback || function(cb) {
-            return setTimeout(function() { cb({ didTimeout: true, timeRemaining: function() { return 0; } }); }, 80);
+        var cancelled = false;
+        var idleId = null;
+        var timerId = null;
+        var ric = window.requestIdleCallback;
+        var invoke = function(deadline) {
+            if (cancelled) return;
+            try { callback(deadline); } catch(e) { console.error('[DD Enhanced] idle task:', e); }
         };
-        return ric(function() {
-            try { callback(); } catch(e) { console.error('[DD Enhanced] idle task:', e); }
-        }, { timeout: timeout || 700 });
+        if (typeof ric === 'function') {
+            idleId = ric.call(window, invoke, { timeout: timeout || 700 });
+        } else {
+            timerId = setTimeout(function() {
+                invoke({ didTimeout: true, timeRemaining: function() { return 0; } });
+            }, 80);
+        }
+        return {
+            cancel: function() {
+                cancelled = true;
+                if (idleId !== null && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
+                if (timerId !== null) clearTimeout(timerId);
+            }
+        };
+    }
+
+    function scheduleDomWrite(callback, timeout) {
+        var cancelled = false;
+        var readyHandler = null;
+        var idleHandle = null;
+        function schedule() {
+            if (cancelled) return;
+            idleHandle = runIdle(function(deadline) {
+                idleHandle = null;
+                if (!cancelled) callback(deadline);
+            }, timeout);
+        }
+        if (document.body && document.readyState !== 'loading') {
+            schedule();
+        } else {
+            readyHandler = function() {
+                readyHandler = null;
+                schedule();
+            };
+            document.addEventListener('DOMContentLoaded', readyHandler, { once: true });
+        }
+        return {
+            cancel: function() {
+                cancelled = true;
+                if (readyHandler) document.removeEventListener('DOMContentLoaded', readyHandler);
+                if (idleHandle) idleHandle.cancel();
+                readyHandler = null;
+                idleHandle = null;
+            }
+        };
     }
 
     function settingEnabled(feature) {
@@ -2265,10 +2353,14 @@
     }
 
     function mountFeature(feature) {
+        if (feature._mountHandle) feature._mountHandle.cancel();
         if (feature._mounted) unmountFeature(feature);
         if (!settingEnabled(feature)) return;
+        var token = (feature._mountToken || 0) + 1;
+        feature._mountToken = token;
         var apply = function() {
-            if (!settingEnabled(feature)) return;
+            feature._mountHandle = null;
+            if (feature._mountToken !== token || feature._mounted || !settingEnabled(feature)) return;
             try {
                 feature.init();
                 feature._mounted = true;
@@ -2276,10 +2368,13 @@
                 console.error('[DD Enhanced] Init ' + feature.key + ':', e);
             }
         };
-        if (feature.immediate) apply(); else runIdle(apply);
+        feature._mountHandle = scheduleDomWrite(apply, 900);
     }
 
     function unmountFeature(feature) {
+        if (feature._mountHandle) feature._mountHandle.cancel();
+        feature._mountHandle = null;
+        feature._mountToken = (feature._mountToken || 0) + 1;
         try { feature.destroy(); } catch(e) { console.error('[DD Enhanced] Destroy ' + feature.key + ':', e); }
         feature._mounted = false;
     }
@@ -2314,33 +2409,42 @@
     function safeObserver(callback) {
         var queue = [];
         var scheduled = false;
+        var scheduledHandle = null;
+        var disconnected = false;
         function flush() {
             scheduled = false;
+            scheduledHandle = null;
+            if (disconnected) return;
             var nodes = queue.splice(0, queue.length);
             nodes.forEach(function(node) {
                 try { callback(node); } catch(e) { console.error('[DD Enhanced] observer:', e); }
             });
         }
         var obs = new MutationObserver(function(mutations) {
+            if (disconnected) return;
             for (var i = 0; i < mutations.length; i++) {
                 var added = mutations[i].addedNodes;
                 for (var j = 0; j < added.length; j++) {
                     if (added[j].nodeType !== 1) continue;
-                    queue.push(added[j]);
+                    if (queue.indexOf(added[j]) === -1) queue.push(added[j]);
                 }
             }
             if (!scheduled && queue.length) {
                 scheduled = true;
-                runIdle(flush);
+                scheduledHandle = runIdle(flush);
             }
         });
-        if (document.readyState === 'complete') {
-            setTimeout(function() { if (document.body) obs.observe(document.body, { childList: true, subtree: true }); }, 200);
-        } else {
-            window.addEventListener('load', function() {
-                setTimeout(function() { if (document.body) obs.observe(document.body, { childList: true, subtree: true }); }, 1000);
-            });
-        }
+        var connectHandle = scheduleDomWrite(function() {
+            if (!disconnected && document.body) obs.observe(document.body, { childList: true, subtree: true });
+        }, 1200);
+        var originalDisconnect = obs.disconnect.bind(obs);
+        obs.disconnect = function() {
+            disconnected = true;
+            queue.length = 0;
+            if (scheduledHandle) scheduledHandle.cancel();
+            if (connectHandle) connectHandle.cancel();
+            originalDisconnect();
+        };
         return obs;
     }
 
@@ -2363,8 +2467,11 @@
         window.addEventListener('dd-nav', function() {
             _tipApplied = false; // Reset so tip can re-apply on new checkout
             setTimeout(function() {
-                features.forEach(function(f) { if (getSetting(f.key) && f.onNavigate) f.onNavigate(); });
-                if (getSetting('feeHighlighter')) annotateFees();
+                scheduleDomWrite(function() {
+                    features.forEach(function(f) { if (settingEnabled(f) && f.onNavigate) f.onNavigate(); });
+                    var feeFeature = features.find(function(f) { return f.key === 'feeHighlighter'; });
+                    if (feeFeature && settingEnabled(feeFeature)) annotateFees();
+                }, 1400);
             }, 500);
         });
     }
@@ -2397,9 +2504,11 @@
     var GEAR_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>';
 
     function initHeaderButtons() {
-        placeHeaderButtons();
+        scheduleDomWrite(placeHeaderButtons, 1200);
         // Re-inject after SPA navigation (React re-renders header)
-        window.addEventListener('dd-nav', function() { setTimeout(placeHeaderButtons, 600); });
+        window.addEventListener('dd-nav', function() {
+            setTimeout(function() { scheduleDomWrite(placeHeaderButtons, 1200); }, 600);
+        });
         // Watch for header appearing after initial React render
         safeObserver(function(node) {
             var existing = document.getElementById(SCRIPT_ID + '-hdr-btns');
@@ -2900,7 +3009,9 @@
     //  INIT
     // =====================================================================
     function init() {
-        document.documentElement.setAttribute('data-' + SCRIPT_ID + '-site', siteVariant());
+        setupSPAHandler();
+        scheduleDomWrite(function() {
+        setAttributeIfChanged(document.documentElement, 'data-' + SCRIPT_ID + '-site', siteVariant());
         injectStyle(SCRIPT_ID + '-core', [
             '/* Custom overrides */',
             '.' + SCRIPT_ID + '-allergen-badge, .' + SCRIPT_ID + '-unit-price, .' + SCRIPT_ID + '-price-increase, .' + SCRIPT_ID + '-fee-baseline, .' + SCRIPT_ID + '-fee-drop {',
@@ -2976,9 +3087,8 @@
         ].join('\n'));
 
         features.forEach(function(f) { mountFeature(f); });
-
-        setupSPAHandler();
         initHeaderButtons();
+        }, 1400);
 
         GM_registerMenuCommand('Open Settings', toggleSettingsPanel);
         GM_registerMenuCommand('Toggle Dark Mode', function() {
