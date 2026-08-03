@@ -121,6 +121,8 @@ All features are togglable from the built-in settings panel:
 
 Settings are organized into groups: Appearance, Ad Blocking, Transparency, Checkout, Utilities, and UI Cleanup. Each feature can be independently enabled or disabled with instant apply/remove — no page reload required.
 
+The settings panel can be displayed in English, Spanish, French, or Canadian English using the **Language** selector under Appearance. New or site-specific strings fall back to English.
+
 The **Default Tip** feature uses a dropdown selector:
 - **Off** — No tip automation
 - **Remember Last** — Stores the last tip you selected and auto-picks it next time

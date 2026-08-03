@@ -62,7 +62,85 @@
         stickyOrderSummary:  true,
         feeDropIndicator:    true,
         syncUrl:             '',
+        language:            'en', // 'en', 'es', 'fr', or 'ca-en'
     };
+
+    var UI_COPY = {
+        en: {
+            language: 'Language', languageDescription: 'Choose the settings-panel language',
+            en: 'English', es: 'Español', fr: 'Français', caEn: 'Canadian English',
+            Appearance: 'Appearance', AdBlocking: 'Ad Blocking', Transparency: 'Transparency', Checkout: 'Checkout',
+            Utilities: 'Utilities', 'UI Cleanup': 'UI Cleanup', Persistence: 'Persistence',
+            off: 'Off', rememberLast: 'Remember last', fixedAmount: 'Fixed amount', amountPlaceholder: '0.00',
+            comfortable: 'Comfortable', compact: 'Compact', dense: 'Dense', enable: 'Enable', pull: 'Pull',
+            rawGistUrl: 'raw Gist URL', allergenPlaceholder: 'peanut, shellfish', exportSettings: 'Export Settings',
+            importSettings: 'Import Settings', orderSummary: 'Order Summary', resetSettings: 'Reset All Settings',
+            close: 'Close', lastTip: 'last: $', summaryTitle: 'Order Summary', invalidSettings: 'Invalid settings file: ',
+        },
+        es: {
+            language: 'Idioma', languageDescription: 'Elige el idioma del panel de ajustes',
+            en: 'English', es: 'Español', fr: 'Français', caEn: 'Inglés canadiense',
+            Appearance: 'Apariencia', AdBlocking: 'Bloqueo de anuncios', Transparency: 'Transparencia', Checkout: 'Pago',
+            Utilities: 'Utilidades', 'UI Cleanup': 'Limpieza de interfaz', Persistence: 'Persistencia',
+            off: 'Desactivado', rememberLast: 'Recordar el último', fixedAmount: 'Cantidad fija', amountPlaceholder: '0,00',
+            comfortable: 'Cómoda', compact: 'Compacta', dense: 'Densa', enable: 'Activar', pull: 'Cargar',
+            rawGistUrl: 'URL de Gist sin formato', allergenPlaceholder: 'cacahuate, mariscos', exportSettings: 'Exportar ajustes',
+            importSettings: 'Importar ajustes', orderSummary: 'Resumen de pedidos', resetSettings: 'Restablecer ajustes',
+            close: 'Cerrar', lastTip: 'último: $', summaryTitle: 'Resumen de pedidos', invalidSettings: 'Archivo de ajustes no válido: ',
+        },
+        fr: {
+            language: 'Langue', languageDescription: 'Choisissez la langue du panneau de réglages',
+            en: 'English', es: 'Español', fr: 'Français', caEn: 'Anglais canadien',
+            Appearance: 'Apparence', AdBlocking: 'Blocage publicitaire', Transparency: 'Transparence', Checkout: 'Paiement',
+            Utilities: 'Utilitaires', 'UI Cleanup': 'Nettoyage de l’interface', Persistence: 'Persistance',
+            off: 'Désactivé', rememberLast: 'Mémoriser le dernier', fixedAmount: 'Montant fixe', amountPlaceholder: '0,00',
+            comfortable: 'Confortable', compact: 'Compact', dense: 'Dense', enable: 'Activer', pull: 'Charger',
+            rawGistUrl: 'URL Gist brute', allergenPlaceholder: 'arachide, fruits de mer', exportSettings: 'Exporter les réglages',
+            importSettings: 'Importer les réglages', orderSummary: 'Résumé des commandes', resetSettings: 'Réinitialiser les réglages',
+            close: 'Fermer', lastTip: 'dernier : $', summaryTitle: 'Résumé des commandes', invalidSettings: 'Fichier de réglages invalide : ',
+        },
+        'ca-en': {
+            language: 'Language', languageDescription: 'Choose the settings-panel language',
+            en: 'English', es: 'Español', fr: 'Français', caEn: 'Canadian English',
+            Appearance: 'Appearance', AdBlocking: 'Ad Blocking', Transparency: 'Transparency', Checkout: 'Checkout',
+            Utilities: 'Utilities', 'UI Cleanup': 'UI Cleanup', Persistence: 'Persistence',
+            off: 'Off', rememberLast: 'Remember last', fixedAmount: 'Fixed amount', amountPlaceholder: '0.00',
+            comfortable: 'Comfortable', compact: 'Compact', dense: 'Dense', enable: 'Enable', pull: 'Pull',
+            rawGistUrl: 'raw Gist URL', allergenPlaceholder: 'peanut, shellfish', exportSettings: 'Export Settings',
+            importSettings: 'Import Settings', orderSummary: 'Order Summary', resetSettings: 'Reset All Settings',
+            close: 'Close', lastTip: 'last: $', summaryTitle: 'Order Summary', invalidSettings: 'Invalid settings file: ',
+        },
+    };
+
+    var FEATURE_COPY = {
+        es: {
+            darkMode: ['Modo oscuro', 'Tema oscuro completo mediante variables Prism'], wideLayout: ['Diseño amplio', 'Usa todo el ancho del navegador'],
+            blockDashPassPromos: ['Bloquear promociones de DashPass', 'Oculta banners y promociones de DashPass'], blockPopups: ['Bloquear ventanas emergentes', 'Cierra automáticamente modales y hojas promocionales'],
+            blockSponsoredCards: ['Ocultar anuncios patrocinados', 'Elimina tarjetas, carruseles y artículos patrocinados'], feeHighlighter: ['Resaltador de tarifas', 'Colorea las tarifas en la página de pago'], autoExpandFees: ['Expandir tarifas automáticamente', 'Expande el desglose de tarifas en el pago'],
+            priceCalculator: ['Calculadora de precio acumulado', 'Muestra el total estimado al explorar un menú'], hideHeroCarousel: ['Ocultar carrusel principal', 'Elimina el carrusel promocional de la página de inicio'], cleanFooter: ['Limpiar pie de página', 'Simplifica el pie de página'], hideTurnstile: ['Ocultar banners de Turnstile', 'Oculta banners de verificación cuando no son necesarios'], stickyCart: ['Botón de carrito fijo', 'Mantén visible el botón del carrito'],
+            quickSearch: ['Historial de búsqueda', 'Recuerda y sugiere búsquedas anteriores'], hideElectronics: ['Ocultar electrónica', 'Elimina la categoría Electrónica de la barra lateral'], tipDefault: ['Propina predeterminada', 'Selecciona automáticamente tu propina preferida'], checkoutFlair: ['Estilo de pago', 'Aspecto refinado para la página de pago'], storePolish: ['Pulido de tienda', 'Mejora el diseño de tiendas y el modo oscuro'], visualFlair: ['Detalles visuales y animaciones', 'Insignias animadas y microinteracciones'],
+            theme: ['Tema', 'Paleta de colores: Mocha, Frappé, Macchiato o Latte'], cardDensity: ['Densidad de tarjetas', 'Diseño de tarjetas cómodo, compacto o denso'], maxDeliveryFee: ['Ocultar tarifas de entrega altas', 'Oculta restaurantes sobre tu límite'], minimalistMode: ['Modo minimalista', 'Oculta insignias e imágenes para una vista más limpia'], unitPriceCalculator: ['Calculadora por unidad', 'Muestra el precio por onza o por 100 g'], allergenFilter: ['Filtro de alérgenos', 'Atenúa artículos que coinciden con tu lista'], deliveryFeeBaseline: ['Referencia de tarifa de entrega', 'Compara tarifas visibles con tu mediana'], priceIncreaseDetector: ['Detector de aumentos', 'Resalta artículos más caros que la última vez'], reorderLast: ['Repetir último pedido', 'Muestra un botón para tu restaurante visitado más reciente'], orderHistory: ['Historial de pedidos', 'Recuerda entradas visibles y permite exportarlas'], portionCalculator: ['Precio por porción', 'Estima el precio por persona en pedidos grupales'], stickyOrderSummary: ['Resumen de pedido fijo', 'Mantén visible el resumen durante el desplazamiento'], feeDropIndicator: ['Indicador de reducción', 'Marca las tarifas que bajan durante la sesión'], syncUrl: ['URL de sincronización', 'Carga ajustes desde un Gist JSON configurado'], language: ['Idioma', 'Elige el idioma del panel de ajustes'],
+        },
+        fr: {
+            darkMode: ['Mode sombre', 'Thème sombre complet via les variables Prism'], wideLayout: ['Mise en page large', 'Utilise toute la largeur du navigateur'], blockDashPassPromos: ['Bloquer les promotions DashPass', 'Masque les bannières et promotions DashPass'], blockPopups: ['Bloquer les fenêtres promotionnelles', 'Ferme les modales et panneaux promotionnels'], blockSponsoredCards: ['Masquer les annonces sponsorisées', 'Supprime les cartes, carrousels et articles sponsorisés'], feeHighlighter: ['Surlignage des frais', 'Colore les frais sur la page de paiement'], autoExpandFees: ['Développer les frais automatiquement', 'Développe le détail des frais au paiement'], priceCalculator: ['Calculateur de prix courant', 'Affiche le total estimé pendant la navigation'], hideHeroCarousel: ['Masquer le carrousel principal', 'Supprime le carrousel promotionnel de l’accueil'], cleanFooter: ['Nettoyer le pied de page', 'Simplifie le pied de page'], hideTurnstile: ['Masquer les bannières Turnstile', 'Masque les bannières de vérification inutiles'], stickyCart: ['Bouton panier fixe', 'Garde le bouton panier visible'], quickSearch: ['Historique des recherches', 'Mémorise et suggère les recherches précédentes'], hideElectronics: ['Masquer l’électronique', 'Supprime la catégorie Électronique'], tipDefault: ['Pourboire par défaut', 'Sélectionne automatiquement votre pourboire'], checkoutFlair: ['Style du paiement', 'Aspect soigné pour le paiement'], storePolish: ['Finition de la boutique', 'Améliore la mise en page des boutiques'], visualFlair: ['Détails visuels et animations', 'Badges animés et micro-interactions'], theme: ['Thème', 'Palette Mocha, Frappé, Macchiato ou Latte'], cardDensity: ['Densité des cartes', 'Mise en page confortable, compacte ou dense'], maxDeliveryFee: ['Masquer les frais élevés', 'Masque les restaurants au-dessus du seuil'], minimalistMode: ['Mode minimaliste', 'Masque les badges et images'], unitPriceCalculator: ['Calculateur à l’unité', 'Affiche le prix à l’once ou pour 100 g'], allergenFilter: ['Filtre d’allergènes', 'Atténue les articles correspondant à votre liste'], deliveryFeeBaseline: ['Référence des frais', 'Compare les frais visibles à votre médiane'], priceIncreaseDetector: ['Détecteur de hausse', 'Surligne les articles plus chers qu’avant'], reorderLast: ['Recommander le dernier', 'Affiche un bouton pour votre dernier restaurant'], orderHistory: ['Historique des commandes', 'Mémorise les commandes visibles et les exporte'], portionCalculator: ['Prix par portion', 'Estime le prix par personne pour les commandes groupées'], stickyOrderSummary: ['Résumé fixe', 'Garde le résumé visible pendant le défilement'], feeDropIndicator: ['Indicateur de baisse', 'Signale les frais réduits pendant la session'], syncUrl: ['URL de synchronisation', 'Charge les réglages depuis un Gist JSON'], language: ['Langue', 'Choisissez la langue du panneau'],
+        },
+        'ca-en': {
+            orderHistory: ['Order History Log', 'Remember visible Orders-page entries and export them locally'], portionCalculator: ['Price per Portion', 'Estimate the per-person price on group-order items'], language: ['Language', 'Choose the settings-panel language'],
+        },
+    };
+
+    function activeLocale() {
+        var language = String(GM_getValue(SCRIPT_ID + '_language', DEFAULT_SETTINGS.language) || 'en');
+        return UI_COPY[language] ? language : 'en';
+    }
+    function t(key, fallback) {
+        var copy = UI_COPY[activeLocale()];
+        return copy[key] || fallback;
+    }
+    function localizedFeature(feature) {
+        var copy = FEATURE_COPY[activeLocale()] && FEATURE_COPY[activeLocale()][feature.key];
+        return copy || [feature.name, feature.desc];
+    }
 
     function getSetting(key) { return GM_getValue(SCRIPT_ID + '_' + key, DEFAULT_SETTINGS[key]); }
     function setSetting(key, val) { GM_setValue(SCRIPT_ID + '_' + key, val); }
@@ -463,6 +541,17 @@
                 applyFlairAttributes(document.body);
             },
             destroy: function() { removeStyle(this.styleId); if (this._obs) this._obs.disconnect(); }
+        },
+
+        // -- SETTINGS LANGUAGE --------------------------------------------
+        {
+            key: 'language',
+            name: 'Language',
+            group: 'Appearance',
+            desc: 'Choose the settings-panel language',
+            custom: true,
+            init: function() {},
+            destroy: function() {}
         },
 
         // -- THEME PICKER (Catppuccin) ------------------------------------
@@ -2935,7 +3024,7 @@
             groupEl.style.marginBottom = '16px';
             var titleEl = document.createElement('div');
             Object.assign(titleEl.style, { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#888', marginBottom: '8px' });
-            titleEl.textContent = groupName;
+            titleEl.textContent = t(groupName, groupName);
             groupEl.appendChild(titleEl);
 
             var box = document.createElement('div');
@@ -2956,7 +3045,34 @@
 
                 var label = document.createElement('div');
                 label.style.flex = '1';
-                label.innerHTML = trustedHTML('<div style="font-size:14px;font-weight:500">' + f.name + '</div><div style="font-size:11px;color:#888;margin-top:2px">' + f.desc + '</div>');
+                var featureCopy = localizedFeature(f);
+                label.innerHTML = trustedHTML('<div style="font-size:14px;font-weight:500">' + featureCopy[0] + '</div><div style="font-size:11px;color:#888;margin-top:2px">' + featureCopy[1] + '</div>');
+
+                // --- Custom UI for language ---
+                if (f.key === 'language') {
+                    var languageSel = document.createElement('select');
+                    Object.assign(languageSel.style, {
+                        background: isDark ? '#222230' : '#f0f0f0', color: fg,
+                        border: '1px solid ' + borderC, borderRadius: '8px',
+                        padding: '6px 8px', fontSize: '13px', cursor: 'pointer',
+                        outline: 'none', flexShrink: '0', marginLeft: '12px',
+                    });
+                    [['en', 'en'], ['es', 'es'], ['fr', 'fr'], ['ca-en', 'caEn']].forEach(function(option) {
+                        var opt = document.createElement('option');
+                        opt.value = option[0]; opt.textContent = t(option[1], option[0]);
+                        if (option[0] === activeLocale()) opt.selected = true;
+                        languageSel.appendChild(opt);
+                    });
+                    languageSel.addEventListener('change', function() {
+                        setSetting('language', languageSel.value);
+                        closeSettingsPanel();
+                        setTimeout(toggleSettingsPanel, 0);
+                    });
+                    row.appendChild(label);
+                    row.appendChild(languageSel);
+                    box.appendChild(row);
+                    return;
+                }
 
                 // --- Custom UI for tipDefault ---
                 if (f.key === 'tipDefault') {
@@ -2972,9 +3088,9 @@
                         outline: 'none',
                     });
                     var opts = [
-                        { val: 'off', text: 'Off' },
-                        { val: 'remember', text: 'Remember last' },
-                        { val: 'custom', text: 'Fixed amount' },
+                        { val: 'off', text: t('off', 'Off') },
+                        { val: 'remember', text: t('rememberLast', 'Remember last') },
+                        { val: 'custom', text: t('fixedAmount', 'Fixed amount') },
                     ];
                     opts.forEach(function(o) {
                         var opt = document.createElement('option');
@@ -2996,7 +3112,7 @@
                         border: '1px solid ' + borderC, borderRadius: '8px',
                         padding: '6px 8px', fontSize: '13px', outline: 'none',
                     });
-                    amtInput.type = 'text'; amtInput.placeholder = '0.00';
+                    amtInput.type = 'text'; amtInput.placeholder = t('amountPlaceholder', '0.00');
                     if (tipVal !== 'off' && tipVal !== 'remember') amtInput.value = tipVal;
 
                     function toggleAmtInput() {
@@ -3025,7 +3141,7 @@
 
                     var remembered = GM_getValue(SCRIPT_ID + '_tipLastAmount', null);
                     if (remembered && tipVal === 'remember') {
-                        label.querySelector('div:last-child').textContent = f.desc + ' (last: $' + remembered + ')';
+                        label.querySelector('div:last-child').textContent = featureCopy[1] + ' (' + t('lastTip', 'last: $') + remembered + ')';
                     }
 
                     amtWrap.appendChild(dollar);
@@ -3080,9 +3196,9 @@
                         outline: 'none', flexShrink: '0', marginLeft: '12px',
                     });
                     [
-                        { val: 'comfortable', text: 'Comfortable' },
-                        { val: 'compact', text: 'Compact' },
-                        { val: 'dense', text: 'Dense' },
+                        { val: 'comfortable', text: t('comfortable', 'Comfortable') },
+                        { val: 'compact', text: t('compact', 'Compact') },
+                        { val: 'dense', text: t('dense', 'Dense') },
                     ].forEach(function(o) {
                         var opt = document.createElement('option');
                         opt.value = o.val; opt.textContent = o.text;
@@ -3122,8 +3238,8 @@
                         var off = getSetting('maxDeliveryFee') === 'off';
                         feeInput.disabled = off;
                         feeInput.style.opacity = off ? '0.45' : '1';
-                        feeToggle.textContent = off ? 'Enable' : 'Off';
-                        feeOut.textContent = off ? 'Off' : '$' + parseFloat(feeInput.value).toFixed(2);
+                        feeToggle.textContent = off ? t('enable', 'Enable') : t('off', 'Off');
+                        feeOut.textContent = off ? t('off', 'Off') : '$' + parseFloat(feeInput.value).toFixed(2);
                     }
                     function saveFeeSetting() {
                         var v = parseFloat(feeInput.value).toFixed(2);
@@ -3155,7 +3271,7 @@
                         padding: '6px 8px', fontSize: '13px', outline: 'none', marginLeft: '12px',
                     });
                     allergyInput.type = 'text';
-                    allergyInput.placeholder = 'peanut, shellfish';
+                    allergyInput.placeholder = t('allergenPlaceholder', 'peanut, shellfish');
                     allergyInput.value = getSetting('allergenFilter') || '';
                     allergyInput.addEventListener('change', function() {
                         setSetting('allergenFilter', allergyInput.value.trim());
@@ -3178,14 +3294,14 @@
                         padding: '6px 8px', fontSize: '13px', outline: 'none',
                     });
                     syncInput.type = 'url';
-                    syncInput.placeholder = 'raw Gist URL';
+                    syncInput.placeholder = t('rawGistUrl', 'raw Gist URL');
                     syncInput.value = getSetting('syncUrl') || '';
                     var syncBtn = document.createElement('button');
                     Object.assign(syncBtn.style, {
                         background: 'transparent', color: fg, border: '1px solid ' + borderC,
                         borderRadius: '8px', padding: '6px 8px', fontSize: '12px', cursor: 'pointer',
                     });
-                    syncBtn.textContent = 'Pull';
+                    syncBtn.textContent = t('pull', 'Pull');
                     syncInput.addEventListener('change', function() {
                         setSetting('syncUrl', syncInput.value.trim());
                         refreshFeature(f);
@@ -3234,7 +3350,7 @@
             border: '1px solid ' + borderC, borderRadius: '8px',
             color: fg, cursor: 'pointer', fontSize: '13px', fontWeight: '500',
         });
-        exportBtn.textContent = 'Export Settings';
+        exportBtn.textContent = t('exportSettings', 'Export Settings');
         exportBtn.addEventListener('click', function() {
             var data = {};
             features.forEach(function(f) { data[f.key] = getSetting(f.key); });
@@ -3252,7 +3368,7 @@
             border: '1px solid ' + borderC, borderRadius: '8px',
             color: fg, cursor: 'pointer', fontSize: '13px', fontWeight: '500',
         });
-        importBtn.textContent = 'Import Settings';
+        importBtn.textContent = t('importSettings', 'Import Settings');
         importBtn.addEventListener('click', function() {
             var input = document.createElement('input');
             input.type = 'file'; input.accept = '.json';
@@ -3269,7 +3385,7 @@
                         closeSettingsPanel();
                         location.reload();
                     } catch(err) {
-                        showToast('Invalid settings file: ' + err.message, true);
+                        showToast(t('invalidSettings', 'Invalid settings file: ') + err.message, true);
                     }
                 };
                 reader.readAsText(input.files[0]);
@@ -3283,7 +3399,7 @@
             border: '1px solid ' + borderC, borderRadius: '8px',
             color: fg, cursor: 'pointer', fontSize: '13px', fontWeight: '500',
         });
-        summaryBtn.textContent = 'Order Summary';
+        summaryBtn.textContent = t('orderSummary', 'Order Summary');
         summaryBtn.addEventListener('click', showOrderDashboard);
 
         eiWrap.appendChild(exportBtn);
@@ -3297,7 +3413,7 @@
             border: '1px solid ' + borderC, borderRadius: '8px',
             color: '#ff3008', cursor: 'pointer', fontSize: '13px', fontWeight: '500', margin: '8px 0',
         });
-        resetBtn.textContent = 'Reset All Settings';
+        resetBtn.textContent = t('resetSettings', 'Reset All Settings');
         resetBtn.addEventListener('click', function() {
             features.forEach(function(f) { unmountFeature(f); setSetting(f.key, DEFAULT_SETTINGS[f.key]); });
             closeSettingsPanel();
