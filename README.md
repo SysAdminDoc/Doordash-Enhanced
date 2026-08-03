@@ -63,6 +63,7 @@ To access settings, press **Alt+P** or click the gear icon in the DoorDash heade
 | Sticky Cart Button | Keeps the cart button visible while scrolling | **On** |
 | Keyboard Shortcuts | `Alt+S` search, `Alt+C` cart, `Alt+H` home, `Alt+O` orders, `Alt+P` settings | **On** |
 | Search History | Remembers previous searches and provides autocomplete suggestions | **On** |
+| Order History Log | Locally remembers visible Orders-page entries and exports CSV/JSON with a spending summary | **On** |
 
 ### UI Cleanup
 

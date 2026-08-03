@@ -57,6 +57,7 @@
         deliveryFeeBaseline: true,
         priceIncreaseDetector: true,
         reorderLast:         true,
+        orderHistory:        true,
         stickyOrderSummary:  true,
         feeDropIndicator:    true,
         syncUrl:             '',
@@ -646,6 +647,34 @@
                 if (this._obs) this._obs.disconnect();
                 var btn = document.getElementById(SCRIPT_ID + '-reorder-last');
                 if (btn) btn.remove();
+            }
+        },
+
+        // -- ORDER HISTORY -------------------------------------------------
+        {
+            key: 'orderHistory',
+            name: 'Order History Log',
+            group: 'Utilities',
+            desc: 'Remember visible Orders-page entries and export them locally',
+            entryMatcher: isOrdersPage,
+            init: function() {
+                collectOrderHistory();
+                renderOrderHistoryToolbar();
+                this._obs = safeObserver(function() {
+                    collectOrderHistory();
+                    renderOrderHistoryToolbar();
+                });
+            },
+            onNavigate: function() {
+                collectOrderHistory();
+                renderOrderHistoryToolbar();
+            },
+            destroy: function() {
+                if (this._obs) this._obs.disconnect();
+                var toolbar = document.getElementById(SCRIPT_ID + '-order-tools');
+                if (toolbar) toolbar.remove();
+                var dashboard = document.getElementById(SCRIPT_ID + '-order-dashboard');
+                if (dashboard) dashboard.remove();
             }
         },
 
@@ -2157,6 +2186,198 @@
         _feeDropLast = found.fee;
     }
 
+    function orderHistoryCards() {
+        var cards = [];
+        var candidates = document.querySelectorAll('a[href*="/orders/"], a[href*="/order/"], [data-testid*="Order"], [data-anchor-id*="Order"]');
+        candidates.forEach(function(candidate) {
+            var card = candidate.closest('article, li') || candidate.parentElement;
+            for (var i = 0; card && i < 8 && card !== document.body; i++, card = card.parentElement) {
+                var text = (card.textContent || '').replace(/\s+/g, ' ').trim();
+                if (text.length >= 30 && text.length <= 1200 && /\$\d+(?:\.\d{1,2})?/.test(text)) {
+                    if (cards.indexOf(card) === -1) cards.push(card);
+                    break;
+                }
+            }
+        });
+        return cards;
+    }
+
+    function orderHash(text) {
+        var hash = 0;
+        for (var i = 0; i < text.length; i++) hash = ((hash << 5) - hash) + text.charCodeAt(i) | 0;
+        return 'dom-' + Math.abs(hash).toString(36);
+    }
+
+    function extractOrderEntry(card) {
+        var text = (card.textContent || '').replace(/\s+/g, ' ').trim();
+        if (!text || !/\$\d+(?:\.\d{1,2})?/.test(text)) return null;
+        var link = card.querySelector('a[href*="/orders/"], a[href*="/order/"]');
+        var date = (text.match(/\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}(?:,\s*\d{4})?|\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/i) || [])[0] || '';
+        var totalMatch = text.match(/(?:total|paid|order)[^$]{0,24}\$(\d+(?:\.\d{1,2})?)/i);
+        var money = text.match(/\$(\d+(?:\.\d{1,2})?)/g) || [];
+        var total = totalMatch ? parseFloat(totalMatch[1]) : (money.length ? parseFloat(money[money.length - 1].slice(1)) : null);
+        var tipMatch = text.match(/(?:tip|gratuity)[^$]{0,20}\$(\d+(?:\.\d{1,2})?)/i);
+        var nameNode = card.querySelector('h1, h2, h3, [data-testid*="Restaurant"], [data-testid*="Store"]');
+        var restaurant = nameNode ? nameNode.textContent.trim() : (text.split(/\$|\b(?:delivered|cancelled|canceled|scheduled)\b/i)[0] || '').trim();
+        restaurant = restaurant.replace(/^(?:order|reorder)\s*[:\-]?\s*/i, '').slice(0, 120);
+        var statusMatch = text.match(/\b(delivered|cancelled|canceled|scheduled|in progress|picked up|refunded)\b/i);
+        var key = link ? link.href : orderHash(text);
+        return {
+            id: key,
+            restaurant: restaurant || 'Unknown restaurant',
+            date: date,
+            total: total === null || isNaN(total) ? null : total,
+            tip: tipMatch ? parseFloat(tipMatch[1]) : null,
+            status: statusMatch ? statusMatch[1] : '',
+            url: link ? link.href : '',
+            observedAt: Date.now()
+        };
+    }
+
+    function collectOrderHistory() {
+        if (!isOrdersPage()) return;
+        var current = getJsonValue('order_history', []);
+        var byId = {};
+        current.forEach(function(entry) { if (entry && entry.id) byId[entry.id] = entry; });
+        orderHistoryCards().forEach(function(card) {
+            var entry = extractOrderEntry(card);
+            if (!entry) return;
+            var previous = byId[entry.id];
+            byId[entry.id] = Object.assign({}, previous || {}, entry, { firstSeenAt: previous && previous.firstSeenAt || entry.observedAt });
+        });
+        var next = Object.keys(byId).map(function(id) { return byId[id]; })
+            .sort(function(a, b) { return (b.observedAt || 0) - (a.observedAt || 0); })
+            .slice(0, 500);
+        if (JSON.stringify(next) !== JSON.stringify(current)) setJsonValue('order_history', next);
+    }
+
+    function orderHistoryEntries() {
+        return getJsonValue('order_history', []).filter(function(entry) { return entry && entry.id; });
+    }
+
+    function csvCell(value) { return '"' + String(value === null || value === undefined ? '' : value).replace(/"/g, '""') + '"'; }
+
+    function downloadText(filename, content, type) {
+        var blob = new Blob([content], { type: type || 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.click();
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    function exportOrderHistory(format) {
+        var entries = orderHistoryEntries();
+        if (format === 'json') {
+            downloadText('doordash-enhanced-orders.json', JSON.stringify(entries, null, 2), 'application/json;charset=utf-8');
+        } else {
+            var columns = ['date', 'restaurant', 'total', 'tip', 'status', 'url'];
+            var rows = [columns.join(',')].concat(entries.map(function(entry) {
+                return columns.map(function(column) { return csvCell(entry[column]); }).join(',');
+            }));
+            downloadText('doordash-enhanced-orders.csv', rows.join('\n'), 'text/csv;charset=utf-8');
+        }
+        showToast('Exported ' + entries.length + ' order entr' + (entries.length === 1 ? 'y' : 'ies'));
+    }
+
+    function renderOrderHistoryToolbar() {
+        var existing = document.getElementById(SCRIPT_ID + '-order-tools');
+        if (!isOrdersPage()) { if (existing) existing.remove(); return; }
+        var entries = orderHistoryEntries();
+        if (!existing) {
+            existing = document.createElement('div');
+            existing.id = SCRIPT_ID + '-order-tools';
+            Object.assign(existing.style, {
+                position: 'fixed', right: '18px', bottom: '24px', zIndex: '99998',
+                display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap',
+                padding: '10px', borderRadius: '12px',
+                background: 'var(--usage-color-background-elevated-default, #1e1e2e)',
+                color: 'var(--usage-color-text-default, #fff)',
+                boxShadow: '0 10px 28px rgba(0,0,0,0.24)',
+            });
+            var label = document.createElement('span');
+            label.id = SCRIPT_ID + '-order-count';
+            label.style.cssText = 'font-size:12px;font-weight:700;margin-right:4px';
+            existing.appendChild(label);
+            [['CSV', 'csv'], ['JSON', 'json'], ['Summary', 'summary']].forEach(function(action) {
+                var button = document.createElement('button');
+                button.textContent = action[0];
+                Object.assign(button.style, {
+                    border: '1px solid rgba(255,48,8,0.35)', borderRadius: '7px', padding: '5px 8px',
+                    background: 'transparent', color: 'inherit', cursor: 'pointer', fontSize: '11px', fontWeight: '700'
+                });
+                button.addEventListener('click', function() {
+                    if (action[1] === 'summary') showOrderDashboard();
+                    else exportOrderHistory(action[1]);
+                });
+                existing.appendChild(button);
+            });
+            document.body.appendChild(existing);
+        }
+        var count = document.getElementById(SCRIPT_ID + '-order-count');
+        if (count) count.textContent = entries.length + ' logged';
+    }
+
+    function showOrderDashboard() {
+        var old = document.getElementById(SCRIPT_ID + '-order-dashboard');
+        if (old) { old.remove(); return; }
+        var entries = orderHistoryEntries();
+        var total = entries.reduce(function(sum, entry) { return sum + (typeof entry.total === 'number' ? entry.total : 0); }, 0);
+        var tips = entries.filter(function(entry) { return typeof entry.tip === 'number'; });
+        var tipTotal = tips.reduce(function(sum, entry) { return sum + entry.tip; }, 0);
+        var restaurants = {};
+        entries.forEach(function(entry) { restaurants[entry.restaurant] = (restaurants[entry.restaurant] || 0) + 1; });
+        var top = Object.keys(restaurants).sort(function(a, b) { return restaurants[b] - restaurants[a]; }).slice(0, 5);
+        var host = document.createElement('div');
+        host.id = SCRIPT_ID + '-order-dashboard';
+        var root = host.attachShadow ? host.attachShadow({ mode: 'open' }) : host;
+        var backdrop = document.createElement('div');
+        Object.assign(backdrop.style, { position: 'fixed', inset: '0', background: 'rgba(0,0,0,0.55)', zIndex: '100001' });
+        var panel = document.createElement('div');
+        Object.assign(panel.style, {
+            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: '100002',
+            width: 'min(420px, calc(100vw - 32px))', maxHeight: '80vh', overflowY: 'auto', padding: '22px',
+            borderRadius: '16px', background: getSetting('darkMode') ? '#1a1a25' : '#fff',
+            color: getSetting('darkMode') ? '#e0e0e8' : '#333', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+        });
+        var title = document.createElement('h2');
+        title.textContent = 'Order Summary';
+        title.style.margin = '0 0 16px';
+        panel.appendChild(title);
+        [['Orders logged', String(entries.length)], ['Tracked spend', '$' + total.toFixed(2)], ['Tracked tips', '$' + tipTotal.toFixed(2)], ['Average tip', tips.length ? '$' + (tipTotal / tips.length).toFixed(2) : 'No tip data']].forEach(function(row) {
+            var line = document.createElement('div');
+            line.style.cssText = 'display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.22);font-size:13px';
+            var label = document.createElement('span'); label.textContent = row[0];
+            var value = document.createElement('strong'); value.textContent = row[1];
+            line.appendChild(label); line.appendChild(value); panel.appendChild(line);
+        });
+        var topHeading = document.createElement('h3');
+        topHeading.textContent = 'Most frequent restaurants';
+        topHeading.style.cssText = 'font-size:13px;margin:18px 0 8px';
+        panel.appendChild(topHeading);
+        if (!top.length) {
+            var empty = document.createElement('div'); empty.textContent = 'No Orders-page entries have been observed yet.'; empty.style.fontSize = '13px'; panel.appendChild(empty);
+        } else {
+            top.forEach(function(name) {
+                var item = document.createElement('div'); item.textContent = name + ' · ' + restaurants[name]; item.style.cssText = 'padding:4px 0;font-size:13px'; panel.appendChild(item);
+            });
+        }
+        var actions = document.createElement('div'); actions.style.cssText = 'display:flex;gap:8px;margin-top:18px';
+        [['Export CSV', 'csv'], ['Export JSON', 'json']].forEach(function(action) {
+            var button = document.createElement('button'); button.textContent = action[0];
+            Object.assign(button.style, { flex: '1', padding: '8px', border: '1px solid rgba(255,48,8,0.4)', borderRadius: '8px', background: 'transparent', color: 'inherit', cursor: 'pointer' });
+            button.addEventListener('click', function() { exportOrderHistory(action[1]); }); actions.appendChild(button);
+        });
+        var close = document.createElement('button'); close.textContent = 'Close';
+        Object.assign(close.style, { width: '100%', padding: '8px', marginTop: '8px', border: '0', borderRadius: '8px', background: '#ff3008', color: '#fff', cursor: 'pointer' });
+        close.addEventListener('click', function() { host.remove(); });
+        actions.appendChild(close); panel.appendChild(actions);
+        backdrop.addEventListener('click', function() { host.remove(); });
+        root.appendChild(backdrop); root.appendChild(panel); document.body.appendChild(host);
+    }
+
     function pullSettingsSync(showSuccess) {
         var url = String(getSetting('syncUrl') || '').trim();
         if (!url || !/^https:\/\/gist\.githubusercontent\.com\//i.test(url)) return;
@@ -2303,6 +2524,7 @@
     function isRestaurantListPage() {
         return !isStorePage() && /^(?:\/$|\/home(?:\/|$)|\/consumer(?:\/|$)|\/search(?:\/|$))/i.test(location.pathname);
     }
+    function isOrdersPage() { return /\/(?:orders?|order-history)(?:\/|$)/i.test(location.pathname); }
     function siteVariant() {
         var host = location.hostname.toLowerCase();
         if (host.endsWith('doordash.ca')) return 'ca';
@@ -2956,7 +3178,7 @@
 
         // --- Export / Import Buttons ---
         var eiWrap = document.createElement('div');
-        eiWrap.style.cssText = 'display:flex;gap:8px;margin:8px 0';
+        eiWrap.style.cssText = 'display:flex;gap:8px;margin:8px 0;flex-wrap:wrap';
 
         var exportBtn = document.createElement('button');
         Object.assign(exportBtn.style, {
@@ -3007,8 +3229,18 @@
             input.click();
         });
 
+        var summaryBtn = document.createElement('button');
+        Object.assign(summaryBtn.style, {
+            flex: '1', minWidth: '120px', padding: '10px', background: 'transparent',
+            border: '1px solid ' + borderC, borderRadius: '8px',
+            color: fg, cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+        });
+        summaryBtn.textContent = 'Order Summary';
+        summaryBtn.addEventListener('click', showOrderDashboard);
+
         eiWrap.appendChild(exportBtn);
         eiWrap.appendChild(importBtn);
+        eiWrap.appendChild(summaryBtn);
         content.appendChild(eiWrap);
 
         var resetBtn = document.createElement('button');
