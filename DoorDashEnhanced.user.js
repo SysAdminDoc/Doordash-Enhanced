@@ -99,9 +99,9 @@
             name: 'Dark Mode',
             group: 'Appearance',
             desc: 'Full dark theme via Prism variable overrides',
-            styleId: SCRIPT_ID + '-dark',
-            init: function() { injectStyle(this.styleId, darkModeCSS()); },
-            destroy: function() { removeStyle(this.styleId); }
+            cssFactory: function() { return darkModeCSS(); },
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- WIDE LAYOUT --------------------------------------------------
@@ -110,13 +110,11 @@
             name: 'Wide Layout',
             group: 'Appearance',
             desc: 'Use full browser width for content',
-            styleId: SCRIPT_ID + '-wide',
-            init: function() {
-                injectStyle(this.styleId,
-                    '[data-testid="ThemingWrapper"] > div > div { max-width: 100% !important; padding-left: 24px !important; padding-right: 24px !important; }'
-                );
+            cssFactory: function() {
+                return '[data-testid="ThemingWrapper"] > div > div { max-width: 100% !important; padding-left: 24px !important; padding-right: 24px !important; }';
             },
-            destroy: function() { removeStyle(this.styleId); }
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- BLOCK DASHPASS PROMOS ----------------------------------------
@@ -251,6 +249,7 @@
             group: 'Transparency',
             desc: 'Color-code fees on checkout page',
             styleId: SCRIPT_ID + '-fees',
+            entryMatcher: isCheckoutPage,
             init: function() {
                 injectStyle(this.styleId, feeHighlighterCSS());
                 this._obs = safeObserver(function() { annotateFees(); });
@@ -270,6 +269,7 @@
             name: 'Auto-Expand Fee Details',
             group: 'Transparency',
             desc: 'Automatically expand fee breakdowns on checkout',
+            entryMatcher: isCheckoutPage,
             init: function() {
                 this._obs = safeObserver(function(node) {
                     if (!isCheckoutPage()) return;
@@ -289,6 +289,7 @@
             name: 'Running Price Calculator',
             group: 'Utilities',
             desc: 'Show estimated total while browsing a store menu',
+            entryMatcher: isStorePage,
             init: function() {
                 this._loop = setInterval(function() {
                     if (!isStorePage()) { var el = document.getElementById(SCRIPT_ID + '-calc'); if (el) el.remove(); return; }
@@ -305,13 +306,12 @@
             name: 'Hide Hero Carousel',
             group: 'UI Cleanup',
             desc: 'Remove the promotional carousel at the top of homepage',
-            styleId: SCRIPT_ID + '-hero',
-            init: function() {
-                injectStyle(this.styleId,
-                    '[data-testid="horizontal-linear-content-wrapper"], [data-testid="HeroImageContainer"] { display: none !important; }'
-                );
+            entryMatcher: isRestaurantListPage,
+            cssFactory: function() {
+                return '[data-testid="horizontal-linear-content-wrapper"], [data-testid="HeroImageContainer"] { display: none !important; }';
             },
-            destroy: function() { removeStyle(this.styleId); }
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- CLEAN FOOTER -------------------------------------------------
@@ -320,13 +320,11 @@
             name: 'Clean Footer',
             group: 'UI Cleanup',
             desc: 'Simplify the cluttered footer',
-            styleId: SCRIPT_ID + '-footer',
-            init: function() {
-                injectStyle(this.styleId,
-                    '[data-testid="Footer"], footer, [role="contentinfo"] { max-height: 200px !important; overflow: hidden !important; }'
-                );
+            cssFactory: function() {
+                return '[data-testid="Footer"], footer, [role="contentinfo"] { max-height: 200px !important; overflow: hidden !important; }';
             },
-            destroy: function() { removeStyle(this.styleId); }
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- HIDE TURNSTILE -----------------------------------------------
@@ -335,15 +333,13 @@
             name: 'Hide Turnstile Banners',
             group: 'UI Cleanup',
             desc: 'Hide Cloudflare turnstile banners when not needed',
-            styleId: SCRIPT_ID + '-turnstile',
-            init: function() {
-                injectStyle(this.styleId, [
+            cssFactory: function() { return [
                     '[data-testid="turnstile/banner"]:not(:has(iframe)),',
                     '[data-testid="turnstile/overlay"]:not(:has(iframe)),',
                     '[data-testid="turnstile/widget"]:not(:has(iframe)) { display: none !important; }',
-                ].join('\n'));
-            },
-            destroy: function() { removeStyle(this.styleId); }
+                ].join('\n'); },
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- STICKY CART --------------------------------------------------
@@ -352,13 +348,11 @@
             name: 'Sticky Cart Button',
             group: 'Utilities',
             desc: 'Keep the cart button visible while scrolling',
-            styleId: SCRIPT_ID + '-sticky',
-            init: function() {
-                injectStyle(this.styleId,
-                    '[data-testid="OrderCartIconButton"] { position: sticky !important; top: 80px !important; z-index: 1000 !important; }'
-                );
+            cssFactory: function() {
+                return '[data-testid="OrderCartIconButton"] { position: sticky !important; top: 80px !important; z-index: 1000 !important; }';
             },
-            destroy: function() { removeStyle(this.styleId); }
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- SEARCH HISTORY -----------------------------------------------
@@ -425,6 +419,7 @@
             group: 'Checkout',
             desc: 'Auto-select your preferred tip on checkout',
             custom: true,
+            entryMatcher: isCheckoutPage,
             init: function() { initTipDefault(); },
             destroy: function() { destroyTipDefault(); }
         },
@@ -435,9 +430,10 @@
             name: 'Checkout Page Styling',
             group: 'Appearance',
             desc: 'Premium look for checkout: glassmorphism, animated totals, polished layout',
-            styleId: SCRIPT_ID + '-checkout',
-            init: function() { injectStyle(this.styleId, checkoutFlairCSS()); },
-            destroy: function() { removeStyle(this.styleId); }
+            entryMatcher: isCheckoutPage,
+            cssFactory: function() { return checkoutFlairCSS(); },
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- STORE PAGE POLISH ---------------------------------------------
@@ -446,9 +442,10 @@
             name: 'Store Page Polish',
             group: 'Appearance',
             desc: 'Enhanced convenience/retail store layout, compact spacing, and dark mode fixes',
-            styleId: SCRIPT_ID + '-store',
-            init: function() { injectStyle(this.styleId, storePolishCSS()); },
-            destroy: function() { removeStyle(this.styleId); }
+            entryMatcher: isStorePage,
+            cssFactory: function() { return storePolishCSS(); },
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- VISUAL FLAIR -------------------------------------------------
@@ -473,9 +470,9 @@
             group: 'Appearance',
             desc: 'Color palette: Mocha (dark), Frappé, Macchiato, or Latte (light)',
             custom: true,
-            styleId: SCRIPT_ID + '-catppuccin',
-            init: function() { injectStyle(this.styleId, catppuccinThemeCSS(getSetting('theme') || 'mocha')); },
-            destroy: function() { removeStyle(this.styleId); }
+            cssFactory: function() { return catppuccinThemeCSS(getSetting('theme') || 'mocha'); },
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- CARD DENSITY SLIDER ------------------------------------------
@@ -485,9 +482,9 @@
             group: 'Appearance',
             desc: 'Comfortable, compact, or dense card layout',
             custom: true,
-            styleId: SCRIPT_ID + '-density',
-            init: function() { injectStyle(this.styleId, cardDensityCSS(getSetting('cardDensity') || 'comfortable')); },
-            destroy: function() { removeStyle(this.styleId); }
+            cssFactory: function() { return cardDensityCSS(getSetting('cardDensity') || 'comfortable'); },
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- MAX DELIVERY FEE FILTER --------------------------------------
@@ -497,6 +494,7 @@
             group: 'Utilities',
             desc: 'Hide restaurants with delivery fees above your threshold',
             custom: true,
+            entryMatcher: isRestaurantListPage,
             init: function() {
                 var self = this;
                 function filterByFee() {
@@ -540,9 +538,9 @@
             name: 'Minimalist Mode',
             group: 'Appearance',
             desc: 'Hide badges and list images for a quieter browsing view',
-            styleId: SCRIPT_ID + '-minimalist',
-            init: function() { injectStyle(this.styleId, minimalistModeCSS()); },
-            destroy: function() { removeStyle(this.styleId); }
+            cssFactory: function() { return minimalistModeCSS(); },
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- UNIT PRICE CALCULATOR ----------------------------------------
@@ -551,6 +549,7 @@
             name: 'Unit Price Calculator',
             group: 'Transparency',
             desc: 'Show price per ounce or per 100g on retail items',
+            entryMatcher: isStorePage,
             init: function() {
                 applyUnitPrices(document.body);
                 this._obs = safeObserver(function(node) { applyUnitPrices(node); });
@@ -570,6 +569,7 @@
             desc: 'Grey menu items that match your comma-separated allergen list',
             custom: true,
             styleId: SCRIPT_ID + '-allergens',
+            entryMatcher: isStorePage,
             init: function() {
                 injectStyle(this.styleId, allergenFilterCSS());
                 applyAllergenFilter(document.body);
@@ -591,6 +591,7 @@
             name: 'Delivery Fee Baseline',
             group: 'Transparency',
             desc: 'Compare visible delivery fees against your rolling median',
+            entryMatcher: isCheckoutPage,
             init: function() {
                 updateDeliveryFeeInsights();
                 this._obs = safeObserver(function() { updateDeliveryFeeInsights(); });
@@ -607,6 +608,7 @@
             name: 'Price Increase Detector',
             group: 'Transparency',
             desc: 'Highlight menu items that cost more than last time you viewed them',
+            entryMatcher: isStorePage,
             init: function() {
                 scanPriceIncreases(document.body);
                 this._obs = safeObserver(function(node) { scanPriceIncreases(node); });
@@ -627,6 +629,7 @@
             name: 'Reorder Last',
             group: 'Utilities',
             desc: 'Show a sticky home-page button for your last visited restaurant',
+            entryMatcher: isRestaurantListPage,
             init: function() {
                 updateLastRestaurant();
                 renderReorderButton();
@@ -652,9 +655,10 @@
             name: 'Sticky Order Summary',
             group: 'Checkout',
             desc: 'Keep the checkout order summary visible while scrolling',
-            styleId: SCRIPT_ID + '-sticky-summary',
-            init: function() { injectStyle(this.styleId, stickyOrderSummaryCSS()); },
-            destroy: function() { removeStyle(this.styleId); }
+            entryMatcher: isCheckoutPage,
+            cssFactory: function() { return stickyOrderSummaryCSS(); },
+            init: function() { refreshCssBundle(); },
+            destroy: function() { refreshCssBundle(); }
         },
 
         // -- FEE DROP INDICATOR -------------------------------------------
@@ -663,6 +667,7 @@
             name: 'Fee Drop Indicator',
             group: 'Transparency',
             desc: 'Mark visible delivery fees that drop during the session',
+            entryMatcher: isCheckoutPage,
             init: function() {
                 updateFeeDropIndicator();
                 this._obs = safeObserver(function() { updateFeeDropIndicator(); });
@@ -2270,6 +2275,18 @@
         return true;
     }
 
+    var CSS_BUNDLE_ID = SCRIPT_ID + '-styles';
+    function refreshCssBundle() {
+        var rules = [];
+        features.forEach(function(feature) {
+            if (!feature.cssFactory || !settingEnabled(feature) || !featureMatches(feature)) return;
+            try { rules.push('/* ' + feature.key + ' */\n' + feature.cssFactory()); }
+            catch(e) { console.error('[DD Enhanced] CSS ' + feature.key + ':', e); }
+        });
+        if (rules.length) injectStyle(CSS_BUNDLE_ID, rules.join('\n\n'));
+        else removeStyle(CSS_BUNDLE_ID);
+    }
+
     function injectStyle(id, css) {
         var existing = document.getElementById(id);
         if (existing && existing.textContent === css) return existing;
@@ -2283,6 +2300,9 @@
     function removeStyle(id) { var el = document.getElementById(id); if (el) el.remove(); }
     function isStorePage() { return /\/store\//.test(location.pathname); }
     function isCheckoutPage() { return /\/checkout/i.test(location.pathname) || !!document.querySelector('[data-testid="LineItems"]'); }
+    function isRestaurantListPage() {
+        return !isStorePage() && /^(?:\/$|\/home(?:\/|$)|\/consumer(?:\/|$)|\/search(?:\/|$))/i.test(location.pathname);
+    }
     function siteVariant() {
         var host = location.hostname.toLowerCase();
         if (host.endsWith('doordash.ca')) return 'ca';
@@ -2352,10 +2372,15 @@
         return feature.custom ? !!val && val !== 'off' : !!val;
     }
 
+    function featureMatches(feature) {
+        try { return !feature.entryMatcher || feature.entryMatcher(); }
+        catch(e) { console.error('[DD Enhanced] Matcher ' + feature.key + ':', e); return false; }
+    }
+
     function mountFeature(feature) {
         if (feature._mountHandle) feature._mountHandle.cancel();
         if (feature._mounted) unmountFeature(feature);
-        if (!settingEnabled(feature)) return;
+        if (!settingEnabled(feature) || !featureMatches(feature)) return;
         var token = (feature._mountToken || 0) + 1;
         feature._mountToken = token;
         var apply = function() {
@@ -2468,7 +2493,14 @@
             _tipApplied = false; // Reset so tip can re-apply on new checkout
             setTimeout(function() {
                 scheduleDomWrite(function() {
-                    features.forEach(function(f) { if (settingEnabled(f) && f.onNavigate) f.onNavigate(); });
+                    features.forEach(function(f) {
+                        if (!settingEnabled(f) || !featureMatches(f)) {
+                            if (f._mounted || f._mountHandle) unmountFeature(f);
+                            return;
+                        }
+                        if (!f._mounted && !f._mountHandle) mountFeature(f);
+                        if (f.onNavigate) f.onNavigate();
+                    });
                     var feeFeature = features.find(function(f) { return f.key === 'feeHighlighter'; });
                     if (feeFeature && settingEnabled(feeFeature)) annotateFees();
                 }, 1400);

@@ -20,5 +20,7 @@ assert.ok(!/\bAlt[+\-]/.test(source), 'Alt keyboard shortcuts must stay removed'
 assert.ok(source.includes('function scheduleDomWrite('), 'DOM writes must have an idle/ready scheduling boundary');
 assert.ok(source.includes('feature._mountToken'), 'feature mounting must guard against stale scheduled work');
 assert.ok(source.includes('scheduledHandle.cancel()'), 'observer teardown must cancel pending idle work');
+assert.ok(source.includes("var CSS_BUNDLE_ID = SCRIPT_ID + '-styles';"), 'CSS-only features must share one style bundle');
+assert.ok(source.includes('entryMatcher: isCheckoutPage'), 'page-bound features must declare an entry matcher');
 
 console.log('userscript contract checks passed');
