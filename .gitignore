@@ -5,6 +5,10 @@ dist/
 *.log
 CLAUDE.md
 
+# Page captures used as theme fixtures. They are saved logged-in, so they
+# embed a delivery address, order history, and account name - keep them local.
+*.mhtml
+
 # Markdown files local-only (except README)
 *.md
 !README.md

@@ -2,6 +2,19 @@
 
 All notable changes to Doordash-Enhanced will be documented in this file.
 
+## [v2.10.0] - 2026-08-06
+
+- Added: A single theme engine that generates every palette from one token map, replacing the separate dark-mode and Catppuccin sheets that previously raced each other in the style bundle.
+- Added: "Midnight", a contrast-tuned default dark palette, alongside the existing Mocha, Frappé, Macchiato, and Latte options.
+- Fixed: Primary-action labels and icons no longer render dark on the red CTA. `--base-color-white` backs seven surface tokens but also fourteen foreground tokens, so darkening it wholesale flipped "Place order" from white to near-black and dropped it below WCAG AA.
+- Fixed: Fifty usage/comp tokens that hardcode hex rather than referencing a ramp are now themed — panel borders, scrims, translucent and media overlays, the side-navigation and date-picker gradients that faded to white, and all eleven elevation tokens, whose light-theme grey shadow was invisible on a dark page.
+- Fixed: Subdued semantic backgrounds are re-tinted. Success, warning, DashPass, deal, and highlight chips draw their fill from steps 0-20 of a color ramp, which are near-white pastels, and previously stayed bright on a dark page while their text stayed dark.
+- Fixed: Toast, tooltip, chat, and selected-control surfaces keep white inverse text legible by staying contrasting rather than inverting to near-white.
+- Fixed: Footer text, the store hero and closing-soon slabs, and the carousel hover veil are now themed. These are literal colors in DoorDash's stylesheets with no token to re-point, so they are anchored to `data-testid` rather than to the styled-components hashes beside them.
+- Fixed: The script's own toolbar and dashboard now follow the selected palette's lightness instead of the dark-mode flag, which painted white-on-white labels when Latte was active.
+- Changed: Latte's upper ramp is two stops darker than stock Catppuccin, because subdued text sits on its tinted canvas rather than on white.
+- Removed: Seventeen lines of dead inline-style selectors and a `--base-color-black` override, verified against the captured pages to match nothing.
+
 ## [v2.9.0] - 2026-08-03
 
 - Added: Idle-safe, idempotent feature lifecycle management with route-aware lazy mounting and a shared CSS bundle.

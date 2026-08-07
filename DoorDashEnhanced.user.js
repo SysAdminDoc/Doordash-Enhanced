@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DoorDash Enhanced
 // @namespace    https://github.com/SysAdminDoc
-// @version      2.9.0
+// @version      2.10.0
 // @description  Comprehensive DoorDash enhancer: dark mode, ad/promo blocking, fee transparency, checkout automation, and UI cleanup.
 // @author       SysAdminDoc
 // @match        https://www.doordash.com/*
@@ -28,7 +28,7 @@
     'use strict';
 
     var SCRIPT_ID = 'dd-enhanced';
-    var VERSION   = '2.9.0';
+    var VERSION   = '2.10.0';
 
     var DEFAULT_SETTINGS = {
         darkMode:            true,
@@ -49,7 +49,7 @@
         tipDefault:          'off',  // 'off', 'remember', or dollar amount like '5.00'
         checkoutFlair:       true,
         storePolish:         true,
-        theme:               'mocha', // 'mocha', 'frappe', 'macchiato', 'latte'
+        theme:               'midnight', // 'midnight', 'mocha', 'frappe', 'macchiato', 'latte'
         cardDensity:         'comfortable', // 'comfortable', 'compact', 'dense'
         maxDeliveryFee:      'off', // 'off' or dollar amount like '5.00'
         minimalistMode:      false,
@@ -590,9 +590,12 @@
             key: 'theme',
             name: 'Theme',
             group: 'Appearance',
-            desc: 'Color palette: Mocha (dark), Frappé, Macchiato, or Latte (light)',
+            desc: 'Palette: Midnight, Mocha, Frappé, Macchiato (dark) or Latte (light)',
             custom: true,
-            cssFactory: function() { return catppuccinThemeCSS(getSetting('theme') || 'mocha'); },
+            // The palette only selects which token sheet Dark Mode emits.
+            // Emitting a second sheet here made the two features race, and
+            // whichever landed later in the bundle silently won.
+            cssFactory: function() { return ''; },
             init: function() { refreshCssBundle(); },
             destroy: function() { refreshCssBundle(); }
         },
@@ -860,70 +863,438 @@
 
 
     // =====================================================================
-    //  DARK MODE CSS - Override DoorDash Prism Design Token Variables
+    //  THEME ENGINE - Prism design-token remapping
+    //
+    //  DoorDash ships the "Prism" design system: ~2,000 CSS custom properties
+    //  layered as --base-color-* (raw ramps) -> --usage-color-* (semantic)
+    //  -> --comp-color-* (per component). Re-pointing those tokens themes the
+    //  entire app instead of fighting thousands of individual element rules.
+    //
+    //  Measured against the page captures in this repo (home / orders /
+    //  store): DoorDash's own stylesheets carry 1,009 var()-driven color
+    //  declarations against 12 literal light colors. The token graph IS the
+    //  theme, so that is where this works.
+    //
+    //  Three things the graph does NOT give you for free - all handled below:
+    //
+    //  1. --base-color-white is overloaded. Seven surface tokens point at it,
+    //     but so do fourteen FOREGROUND tokens, including
+    //     --usage-color-action-primary-text-default (the "Place order" label)
+    //     and --comp-color-button-primary-icon-*. Darkening white therefore
+    //     paints dark text onto the red CTA. So white stays white here, and
+    //     the seven surface tokens are re-pointed by name instead.
+    //
+    //  2. Fifty usage/comp tokens hardcode hex instead of referencing a ramp
+    //     (borders, scrims, translucent fills, elevation, gradients). A ramp
+    //     change cannot reach them, so they are overridden explicitly.
+    //
+    //  3. Every "subdued" semantic background is a near-white pastel drawn
+    //     from step 0-20 of a color ramp. Left alone, the success / warning /
+    //     DashPass / deal chips stay bright white on a dark page.
     // =====================================================================
+
+    function hexToRgb(hex) {
+        var h = String(hex).replace('#', '');
+        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+        return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+    }
+    function rgbToHex(rgb) {
+        return '#' + rgb.map(function(v) {
+            var s = Math.max(0, Math.min(255, Math.round(v))).toString(16);
+            return s.length < 2 ? '0' + s : s;
+        }).join('');
+    }
+    /** Blend two hex colors. t=0 returns a, t=1 returns b. */
+    function mixHex(a, b, t) {
+        var x = hexToRgb(a), y = hexToRgb(b);
+        return rgbToHex([
+            x[0] + (y[0] - x[0]) * t,
+            x[1] + (y[1] - x[1]) * t,
+            x[2] + (y[2] - x[2]) * t
+        ]);
+    }
+    /** Hex + 0-1 alpha -> 8-digit hex, the form Prism tokens are authored in. */
+    function alphaHex(hex, alpha) {
+        var a = Math.max(0, Math.min(255, Math.round(alpha * 255))).toString(16);
+        return hex + (a.length < 2 ? '0' + a : a);
+    }
+
+    // Neutral ramp steps Prism actually defines. The odd steps below are
+    // aliases DoorDash mirrors onto the next lower step; they have no
+    // consumers in the captures but are kept so a future one inherits.
+    var RAMP_STEPS = [0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 100];
+    var RAMP_ALIASES = { 15: 10, 25: 20, 35: 30, 45: 40, 55: 50, 65: 60, 75: 70, 85: 80 };
+
+    // Each palette supplies the same shape, so the generator stays direction
+    // agnostic: dark palettes run the ramp dark -> light, light palettes run
+    // it light -> dark, exactly as Prism authors it.
+    var PALETTES = {
+        midnight: {
+            label: 'Midnight', dark: true,
+            canvas: '#0e1013', surface: '#14161b', elevated: '#1b1e25',
+            ramp: ['#1b1e25', '#21252d', '#2b303a', '#363c47', '#464d5a', '#576070',
+                   '#6b7484', '#878f9d', '#a2aab7', '#bbc2cc', '#d2d7df', '#e0e4ea', '#edf0f4'],
+            inverse: '#363c47', inverseSubdued: '#464d5a',
+            red: '#ff8f7a', green: '#5fd485', yellow: '#f3c34f',
+            blue: '#93aaff', purple: '#bb9dff', teal: '#5fd0c2'
+        },
+        mocha: {
+            label: 'Mocha', dark: true,
+            canvas: '#11111b', surface: '#1e1e2e', elevated: '#252537',
+            ramp: ['#252537', '#2b2b3d', '#313244', '#45475a', '#585b70', '#6c7086',
+                   '#7f849c', '#9399b2', '#a6adc8', '#bac2de', '#cdd6f4', '#d9e0f7', '#e6ebfb'],
+            inverse: '#45475a', inverseSubdued: '#585b70',
+            red: '#f38ba8', green: '#a6e3a1', yellow: '#f9e2af',
+            blue: '#89b4fa', purple: '#cba6f7', teal: '#94e2d5'
+        },
+        frappe: {
+            label: 'Frappe', dark: true,
+            canvas: '#232634', surface: '#303446', elevated: '#363a4c',
+            ramp: ['#363a4c', '#3b3f52', '#414559', '#51576d', '#626880', '#737994',
+                   '#838ba7', '#949cbb', '#a5adce', '#b5bfe2', '#c6d0f5', '#d2daf8', '#dfe5fb'],
+            inverse: '#51576d', inverseSubdued: '#626880',
+            red: '#e78284', green: '#a6d189', yellow: '#e5c890',
+            blue: '#8caaee', purple: '#ca9ee6', teal: '#81c8be'
+        },
+        macchiato: {
+            label: 'Macchiato', dark: true,
+            canvas: '#181926', surface: '#24273a', elevated: '#2a2d42',
+            ramp: ['#2a2d42', '#303348', '#363a4f', '#494d64', '#5b6078', '#6e738d',
+                   '#8087a2', '#939ab7', '#a5adcb', '#b8c0e0', '#cad3f5', '#d6ddf8', '#e3e8fb'],
+            inverse: '#494d64', inverseSubdued: '#5b6078',
+            red: '#ed8796', green: '#a6da95', yellow: '#eed49f',
+            blue: '#8aadf4', purple: '#c6a0f6', teal: '#8bd5ca'
+        },
+        latte: {
+            label: 'Latte', dark: false,
+            canvas: '#eff1f5', surface: '#ffffff', elevated: '#ffffff',
+            // Step 70 backs --usage-color-text-subdued-default, the most-used
+            // secondary text on the site, and most of it sits on the #eff1f5
+            // canvas rather than on white. Catppuccin's overlay2 (#7c7f93)
+            // measures 3.95:1 there and subtext0 (#6c6f85) 4.37:1, so the
+            // upper rungs are pulled two stops darker than the stock ordering.
+            ramp: ['#eff1f5', '#e6e9ef', '#dce0e8', '#ccd0da', '#bcc0cc', '#acb0be',
+                   '#9ca0b0', '#7c7f93', '#5c5f77', '#4c4f69', '#3f4256', '#383b4d', '#313343'],
+            inverse: '#4c4f69', inverseSubdued: '#6c6f85',
+            red: '#d20f39', green: '#40a02b', yellow: '#df8e1d',
+            blue: '#1e66f5', purple: '#8839ef', teal: '#179299'
+        }
+    };
+
+    function activePalette() {
+        return PALETTES[getSetting('theme')] || PALETTES.midnight;
+    }
+
+    /**
+     * Whether the script's own injected widgets should paint themselves dark.
+     * This is the palette's lightness, not the darkMode flag: with Latte
+     * selected the flag is still on, and keying off it painted white-on-white
+     * labels into the order-history export panel.
+     */
+    function themeIsDark() {
+        return !!getSetting('darkMode') && activePalette().dark;
+    }
+
+    /**
+     * Build the whole Prism token override sheet for one palette.
+     *
+     * Selector note: the tokens live on `.prism-theme` divs, and a nested
+     * wrapper re-declares 291 of them at specificity (0,3,0). Tripling the
+     * class and marking !important keeps this sheet above both. `:root` is
+     * included so anything rendered outside a ThemingWrapper still inherits.
+     */
+    function themeCSS(paletteName) {
+        var p = PALETTES[paletteName] || PALETTES.midnight;
+        var ramp = p.ramp;
+        var out = [];
+        var decl = [];
+        function v(name, value) { decl.push('  ' + name + ': ' + value + ' !important;'); }
+
+        // Accent tint used for "subdued" semantic backgrounds. Mixed up from
+        // the canvas rather than the card surface, so a chip always sits at or
+        // below the page floor instead of above whatever it happens to be
+        // sitting on. Frappe, whose surface is the lightest of the dark
+        // palettes, missed AA on the active nav row by 0.01 when this mixed
+        // from p.surface.
+        function tint(accent, strength) { return mixHex(p.canvas, accent, strength); }
+
+        function step(n) {
+            var i = RAMP_STEPS.indexOf(n);
+            return i === -1 ? ramp[0] : ramp[i];
+        }
+
+        // -- 1. neutral ramp: 1,558 downstream tokens follow this ----------
+        RAMP_STEPS.forEach(function(n, i) {
+            v('--base-color-neutral-' + n, ramp[i] + 'ff');
+        });
+        Object.keys(RAMP_ALIASES).forEach(function(n) {
+            v('--base-color-neutral-' + n, step(RAMP_ALIASES[n]) + 'ff');
+        });
+
+        // -- 2. surfaces that referenced --base-color-white ----------------
+        // white itself is deliberately left alone; see the header note.
+        v('--usage-color-background-default', p.surface + 'ff');
+        v('--usage-color-background-elevated-default', p.elevated + 'ff');
+        v('--comp-color-canvas-background-default', p.surface + 'ff');
+        v('--comp-color-canvas-background-elevated-default', p.elevated + 'ff');
+        // The selected pill in a contained toggle originally matched white,
+        // i.e. "raised above the track". On dark that has to be lighter than
+        // the track to read as raised; on light it stays the elevated surface,
+        // because the label sitting on it is the dark text token.
+        v('--comp-color-button-toggle-contained-background-selected',
+          (p.dark ? p.inverse : p.elevated) + 'ff');
+
+        // DoorDash declares the semantic text tokens only inside .prism-theme,
+        // so anything mounted straight onto <body> - this script's own toolbar
+        // and dashboard among them - resolves them to nothing and falls back
+        // to whatever hardcoded literal follows the comma. Declaring them here
+        // means the sheet also covers the parts of the page Prism never wraps.
+        v('--usage-color-text-default', ramp[12] + 'ff');
+        v('--usage-color-text-subdued-default', step(70) + 'ff');
+        v('--usage-color-icon-default', ramp[12] + 'ff');
+
+        // -- 3. inverse / selected surfaces --------------------------------
+        // 34 text and 28 icon tokens resolve to --usage-color-text-inverse-*,
+        // and they land on three different kinds of surface: inverse chrome
+        // (toast, tooltip, chat), saturated fills (destructive button,
+        // emphasis tags) and "selected" controls. Keeping inverse foregrounds
+        // white and forcing all three surface families to stay contrasting is
+        // the only assignment that satisfies every pairing at once.
+        ['default', 'hovered', 'pressed'].forEach(function(state, i) {
+            var shade = [p.inverse, mixHex(p.inverse, ramp[12], 0.08), mixHex(p.inverse, ramp[12], 0.16)][i];
+            v('--usage-color-background-inverse-' + state, shade + 'ff');
+            v('--usage-color-background-selected' + (state === 'default' ? '' : '-' + state), shade + 'ff');
+        });
+        v('--usage-color-background-inverse-subdued-default', p.inverseSubdued + 'ff');
+        v('--usage-color-background-inverse-subdued-hovered', mixHex(p.inverseSubdued, ramp[12], 0.08) + 'ff');
+        v('--usage-color-background-inverse-subdued-pressed', mixHex(p.inverseSubdued, ramp[12], 0.16) + 'ff');
+        v('--comp-color-canvas-background-inverse-default', p.inverse + 'ff');
+
+        // -- 4. the 36 usage tokens that hardcode hex ----------------------
+        var ink = p.dark ? '#000000' : '#191919';   // scrim / shadow ink
+        var veil = p.dark ? ramp[12] : '#ffffff';   // light film over surfaces
+        v('--usage-color-border-default', step(10) + 'ff');
+        v('--usage-color-border-focused', alphaHex(ramp[12], 0.66));
+        v('--usage-color-border-inverse-focused', alphaHex(p.dark ? '#000000' : '#ffffff', 0.66));
+        v('--usage-color-icon-opacity-subdued-default', alphaHex(ramp[12], 0.21));
+        v('--usage-color-overlay', alphaHex(ink, p.dark ? 0.66 : 0.5));
+        v('--usage-color-opacity-default', alphaHex(ramp[12], 0.70));
+        v('--usage-color-opacity-hovered', alphaHex(ramp[12], 0.80));
+        v('--usage-color-opacity-pressed', alphaHex(ramp[12], 0.90));
+        v('--usage-color-transparent-default', alphaHex(ramp[12], 0));
+        v('--usage-color-transparent-hovered', alphaHex(veil, 0.06));
+        v('--usage-color-transparent-pressed', alphaHex(veil, 0.11));
+        v('--usage-color-transparent-subdued-default', alphaHex(veil, 0.10));
+        v('--usage-color-transparent-subdued-hovered', alphaHex(veil, 0.16));
+        v('--usage-color-transparent-subdued-pressed', alphaHex(veil, 0.22));
+        v('--usage-color-transparent-strong-default', alphaHex(veil, 0.20));
+        v('--usage-color-transparent-strong-hovered', alphaHex(veil, 0.28));
+        v('--usage-color-transparent-strong-pressed', alphaHex(veil, 0.36));
+        v('--usage-color-translucent-default', alphaHex(p.surface, 0.55));
+        v('--usage-color-translucent-hovered', alphaHex(p.surface, 0.68));
+        v('--usage-color-translucent-pressed', alphaHex(p.surface, 0.78));
+        v('--usage-color-translucent-subdued-default', alphaHex(veil, 0.08));
+        v('--usage-color-translucent-subdued-hovered', alphaHex(veil, 0.13));
+        v('--usage-color-translucent-subdued-pressed', alphaHex(veil, 0.18));
+        v('--usage-color-media-overlay-default', alphaHex(ink, 0));
+        v('--usage-color-media-overlay-hovered', alphaHex(ink, 0.14));
+        v('--usage-color-media-overlay-pressed', alphaHex(ink, 0.22));
+        v('--usage-color-media-overlay-disabled', alphaHex(p.surface, 0.80));
+        // map chrome: the base layer is inverted by filter further down, so
+        // its labels and hotspots are tuned against that inverted plate.
+        v('--usage-color-map-6-background', alphaHex(p.surface, 0.86));
+        v('--usage-color-map-1-approximation', alphaHex(p.blue, 0.22));
+        v('--usage-color-map-2-opacity', alphaHex(ink, 0.20));
+        v('--usage-color-map-3-opacity', alphaHex(ink, 0.20));
+        v('--usage-color-map-4-opacity', alphaHex(ink, 0.20));
+        v('--usage-color-map-5-opacity', alphaHex(veil, 0.20));
+        v('--usage-color-map-base-gradient-to-bottom',
+          'linear-gradient(to bottom, ' + alphaHex(p.surface, 0) + ' 0%, ' + p.surface + 'ff 100%)');
+
+        // -- 5. the 14 comp tokens that hardcode hex -----------------------
+        v('--comp-color-canvas-border-default', step(10) + 'ff');
+        v('--comp-color-canvas-border-focused', alphaHex(ramp[12], 0.66));
+        v('--comp-color-canvas-border-inverse-focused', alphaHex(p.dark ? '#000000' : '#ffffff', 0.66));
+        v('--comp-color-side-navigation-nested-indicator-default', step(10) + 'ff');
+        v('--comp-color-banner-action-primary-default', alphaHex(veil, 0.10));
+        v('--comp-color-banner-action-primary-hovered', alphaHex(veil, 0.20));
+        v('--comp-color-banner-action-primary-pressed', alphaHex(veil, 0.30));
+        v('--comp-color-map-current-location-approximation', alphaHex(p.blue, 0.22));
+        ['deal', 'highlight', 'informational', 'negative', 'positive', 'warning'].forEach(function(k) {
+            v('--comp-color-tag-border-' + k, alphaHex(p.surface, 0));
+        });
+
+        // -- 6. gradients that fade to white -------------------------------
+        v('--comp-color-side-navigation-gradient-to-bottom-default',
+          'linear-gradient(to bottom, ' + alphaHex(p.surface, 0) + ' 0%, ' + p.surface + 'ff 100%)');
+        ['left', 'right'].forEach(function(dir) {
+            [['default', 0], ['hovered', 1], ['pressed', 2]].forEach(function(pair) {
+                var c = step([5, 10, 20][pair[1]]);
+                v('--comp-color-date-picker-range-gradient-to-' + dir + '-' + pair[0],
+                  'linear-gradient(to ' + dir + ', ' + c + 'ff 0%, ' + alphaHex(c, 0) + ' 100%)');
+            });
+        });
+
+        // -- 7. elevation: a light-theme grey shadow vanishes on dark ------
+        var elevAlpha = p.dark ? 0.55 : 0.20;
+        [[1, '0px 1px 4px 0px'], [2, '0px 2px 8px 0px'], [3, '0px 4px 12px 0px'],
+         [4, '0px 4px 16px 0px'], [5, '0px 6px 20px 0px'], [6, '0px 8px 24px 0px']].forEach(function(e) {
+            v('--usage-elevation-' + e[0], e[1] + ' ' + alphaHex(ink, elevAlpha));
+        });
+        v('--comp-elevation-quantity-stepper-floating', '0px 1px 4px 0px ' + alphaHex(ink, elevAlpha));
+        v('--comp-elevation-button-toggle-group-selected', '0px 6px 20px 0px ' + alphaHex(ink, elevAlpha));
+
+        // -- 8 & 9. accent repairs, dark palettes only ---------------------
+        // Everything below corrects for a light-theme assumption: pale chip
+        // backgrounds, and saturated foregrounds picked to sit on white. On a
+        // light palette DoorDash's own values are already right, so applying
+        // these would only pull contrast down - Latte measured 35 regressions
+        // on the home capture before this gate.
+        if (p.dark) {
+
+        // Ramp steps 0-20 of every accent hue back the chips and banners.
+        var ACCENTS = [
+            ['red', p.red], ['green', p.green], ['yellow', p.yellow],
+            ['purple', p.purple], ['teal', p.teal], ['amber', p.yellow],
+            ['brand-doordash', '#eb1700']
+        ];
+        ACCENTS.forEach(function(pair) {
+            var name = pair[0], hue = pair[1];
+            [[0, 0.10], [5, 0.13], [10, 0.18], [20, 0.26]].forEach(function(s) {
+                v('--base-color-' + name + '-' + s[0], tint(hue, s[1]) + 'ff');
+            });
+        });
+
+        // accent foregrounds
+        // Prism reads chip/banner text off the *-strong-* and *-default* rungs,
+        // which are dark saturated hues meant for a white page. On dark they
+        // fall under 3:1, so the comp-level foregrounds are lifted directly -
+        // the fills that share those rungs are left untouched.
+        v('--comp-color-tag-text-negative', p.red + 'ff');
+        v('--comp-color-tag-icon-negative', p.red + 'ff');
+        v('--comp-color-banner-icon-negative', p.red + 'ff');
+        v('--comp-color-tag-text-positive', p.green + 'ff');
+        v('--comp-color-tag-icon-positive', p.green + 'ff');
+        v('--comp-color-banner-icon-positive', p.green + 'ff');
+        v('--comp-color-tag-text-warning', p.yellow + 'ff');
+        v('--comp-color-tag-icon-warning', p.yellow + 'ff');
+        v('--comp-color-banner-icon-warning', p.yellow + 'ff');
+        v('--comp-color-tag-text-highlight', p.teal + 'ff');
+        v('--comp-color-tag-icon-highlight', p.teal + 'ff');
+        v('--comp-color-banner-icon-highlight', p.red + 'ff');
+        v('--comp-color-tag-text-deal', p.red + 'ff');
+        v('--comp-color-tag-icon-deal', p.red + 'ff');
+        v('--usage-color-text-link-default', p.blue + 'ff');
+        v('--usage-color-text-link-hovered', mixHex(p.blue, ramp[12], 0.25) + 'ff');
+        v('--usage-color-text-link-pressed', mixHex(p.blue, ramp[12], 0.40) + 'ff');
+        v('--usage-color-brand-dashpass', p.purple + 'ff');
+
+        // "Emphasis" chips are a saturated fill carrying inverse (white) text.
+        // Re-tinting them dark and letting the accent carry the text keeps the
+        // *-default rungs below free to be lifted for plain text use, which is
+        // what the next block depends on.
+        [['positive', p.green], ['negative', p.red], ['warning', p.yellow],
+         ['highlight', p.teal], ['deal', p.red]].forEach(function(pair) {
+            var k = pair[0], hue = pair[1];
+            v('--comp-color-tag-background-emphasis-' + k, tint(hue, 0.30) + 'ff');
+            v('--comp-color-tag-text-emphasis-' + k, hue + 'ff');
+            v('--comp-color-tag-icon-emphasis-' + k, hue + 'ff');
+        });
+
+        // Now safe to lift: every fill that shared these rungs was re-pointed
+        // above, so what is left reads as plain text (a "Closing soon" notice,
+        // an active nav row) sitting straight on a dark surface.
+        v('--usage-color-positive-default', p.green + 'ff');
+        v('--usage-color-warning-default', p.yellow + 'ff');
+        v('--usage-color-highlight-default', p.teal + 'ff');
+        v('--usage-color-deal-default', p.red + 'ff');
+        v('--comp-color-canvas-action-active-text-default', p.red + 'ff');
+        v('--comp-color-canvas-action-active-icon-default', p.red + 'ff');
+        // The active side-nav row paints its label from action-primary-strong.
+        // That rung has no comp-token consumers and is only ever read as a
+        // color in these captures, so lifting it cannot touch a button fill.
+        v('--usage-color-action-primary-strong-default', p.red + 'ff');
+        v('--usage-color-action-primary-strong-hovered', mixHex(p.red, ramp[12], 0.20) + 'ff');
+        v('--usage-color-action-primary-strong-pressed', mixHex(p.red, ramp[12], 0.35) + 'ff');
+
+        } else {
+            // A light palette whose canvas is tinted rather than pure white
+            // gives DoorDash's warning hue less to work against: the store
+            // "Closing soon" notice measures 4.5:1 on #ffffff but 4.2:1 on
+            // Latte's #eff1f5, so the hue is darkened rather than lifted.
+            v('--usage-color-warning-default', mixHex(p.yellow, '#000000', 0.35) + 'ff');
+        }   // end palette-specific accent repairs
+
+        v('color-scheme', p.dark ? 'dark' : 'light');
+
+        out.push(':root,');
+        out.push('.prism-theme.prism-theme.prism-theme,');
+        out.push('[data-testid="ThemingWrapper"][data-testid="ThemingWrapper"] {');
+        out.push(decl.join('\n'));
+        out.push('}');
+
+        // -- 10. page chrome the token graph does not own -------------------
+        out.push('html, body { background-color: ' + p.canvas + ' !important; color: ' + ramp[12] + ' !important; }');
+
+        // -- 11. the literal colors Prism does not route through a token ----
+        // DoorDash's own stylesheets carry 120 literal color declarations.
+        // Most are already dark or scrims; these are the ones that land on a
+        // dark page as unreadable text or a white slab. Each is anchored to a
+        // data-testid rather than the styled-components hash beside it,
+        // because those hashes are regenerated on every deploy.
+        out.push('footer[data-testid="Footer"], footer[data-testid="Footer"] h1,');
+        out.push('footer[data-testid="Footer"] h2, footer[data-testid="Footer"] h3 {');
+        out.push('  color: ' + ramp[12] + ' !important;');
+        out.push('}');
+        out.push('footer[data-testid="Footer"] a, footer[data-testid="Footer"] a span,');
+        out.push('footer[data-testid="Footer"] p, footer[data-testid="Footer"] li,');
+        out.push('footer[data-testid="Footer"] > div > div > span {');
+        out.push('  color: ' + step(70) + ' !important;');
+        out.push('}');
+        // White slabs behind a store hero and the closing-soon banner.
+        out.push('[data-testid="HeroImageContainer"] > div,');
+        out.push('[data-testid="MenuCloseCountdownBannerStyling"] > div {');
+        out.push('  background-color: ' + p.elevated + ' !important;');
+        out.push('}');
+        // A 50%-white hover veil over carousel cards blows out on dark.
+        out.push('[data-anchor-id="WindowShoppingCarousel"] div[class*="sc-"] {');
+        out.push('  background-color: ' + alphaHex(veil, 0.07) + ' !important;');
+        out.push('}');
+        out.push('::-webkit-scrollbar { width: 10px; height: 10px; }');
+        out.push('::-webkit-scrollbar-track { background: ' + p.canvas + '; }');
+        out.push('::-webkit-scrollbar-thumb { background: ' + step(20) + '; border-radius: 5px; }');
+        out.push('::-webkit-scrollbar-thumb:hover { background: ' + step(30) + '; }');
+        out.push('* { scrollbar-color: ' + step(20) + ' ' + p.canvas + '; }');
+
+        // Mapbox ships raster/vector tiles this stylesheet cannot reach, so
+        // the plate is inverted wholesale and its overlaid chrome inverted
+        // back. Only worth doing on a dark palette.
+        if (p.dark) {
+            out.push('.mapboxgl-map { filter: invert(1) hue-rotate(180deg) brightness(1.05) contrast(0.92) !important; }');
+            out.push('.mapboxgl-marker, .mapboxgl-ctrl, .mapboxgl-ctrl-logo, .mapboxgl-popup,');
+            out.push('[data-testid="MarkerContainer"], [data-testid="ZoomControl"] {');
+            out.push('  filter: invert(1) hue-rotate(180deg) !important;');
+            out.push('}');
+        }
+
+        // Dasher runs a separate app that never mounts a ThemingWrapper.
+        out.push('html[data-' + SCRIPT_ID + '-site="dasher"] [data-testid="app"],');
+        out.push('html[data-' + SCRIPT_ID + '-site="dasher"] #root,');
+        out.push('html[data-' + SCRIPT_ID + '-site="dasher"] [role="main"] {');
+        out.push('  background-color: ' + p.canvas + ' !important; color: ' + ramp[12] + ' !important;');
+        out.push('}');
+        out.push('html[data-' + SCRIPT_ID + '-site="dasher"] input,');
+        out.push('html[data-' + SCRIPT_ID + '-site="dasher"] textarea,');
+        out.push('html[data-' + SCRIPT_ID + '-site="dasher"] [role="dialog"] {');
+        out.push('  background-color: ' + p.elevated + ' !important; color: ' + ramp[12] +
+                 ' !important; border-color: ' + step(10) + ' !important;');
+        out.push('}');
+
+        return out.join('\n');
+    }
+
     function darkModeCSS() {
-        return [
-        '.prism-theme.prism-theme,',
-        '[data-testid="ThemingWrapper"][data-testid="ThemingWrapper"] {',
-        '  --base-color-white:      #111118ff !important;',
-        '  --base-color-neutral-0:  #1a1a22ff !important;',
-        '  --base-color-neutral-5:  #1e1e28ff !important;',
-        '  --base-color-neutral-10: #2a2a35ff !important;',
-        '  --base-color-neutral-20: #3a3a45ff !important;',
-        '  --base-color-neutral-30: #4a4a55ff !important;',
-        '  --base-color-neutral-40: #5a5a65ff !important;',
-        '  --base-color-neutral-50: #7a7a85ff !important;',
-        '  --base-color-neutral-60: #8a8a95ff !important;',
-        '  --base-color-neutral-70: #9a9aa5ff !important;',
-        '  --base-color-neutral-80: #b0b0bbff !important;',
-        '  --base-color-neutral-90: #c8c8d0ff !important;',
-        '  --base-color-neutral-95: #d8d8e0ff !important;',
-        '  --base-color-neutral-100: #e8e8f0ff !important;',
-        '  --base-color-black:      #ffffffff !important;',
-        '  --usage-color-border-default: #2a2a35ff !important;',
-        '  --usage-color-border-focused: #e8e8f0a8 !important;',
-        '  color-scheme: dark !important;',
-        '}',
-        'html, body { background-color: #111118 !important; color: #e8e8f0 !important; }',
-        'div[style*="background-color: rgb(255, 255, 255)"],',
-        'div[style*="background-color: white"],',
-        'div[style*="background: white"],',
-        'div[style*="background: rgb(255, 255, 255)"] { background-color: #111118 !important; }',
-        'div[style*="background-color: rgb(247"],',
-        'div[style*="background-color: rgb(248"],',
-        'div[style*="background-color: rgb(249"],',
-        'div[style*="background-color: rgb(250"],',
-        'div[style*="background-color: rgb(251"],',
-        'div[style*="background-color: rgb(252"],',
-        'div[style*="background-color: rgb(253"],',
-        'div[style*="background-color: rgb(254"],',
-        'div[style*="background-color: rgb(241"],',
-        'div[style*="background-color: rgb(242"],',
-        'div[style*="background-color: rgb(243"],',
-        'div[style*="background-color: rgb(244"],',
-        'div[style*="background-color: rgb(245"] { background-color: #1a1a22 !important; }',
-        '::-webkit-scrollbar { width: 10px; height: 10px; }',
-        '::-webkit-scrollbar-track { background: #111118; }',
-        '::-webkit-scrollbar-thumb { background: #3a3a45; border-radius: 5px; }',
-        '::-webkit-scrollbar-thumb:hover { background: #4a4a55; }',
-        'img { border-radius: 8px; }',
-        '.mapboxgl-map { filter: invert(1) hue-rotate(180deg) brightness(1.1) contrast(0.9) !important; }',
-        '.mapboxgl-marker, .mapboxgl-ctrl, .mapboxgl-ctrl-logo, .mapboxgl-popup,',
-        '[data-testid="MarkerContainer"], [data-testid="ZoomControl"] {',
-        '  filter: invert(1) hue-rotate(180deg) !important;',
-        '}',
-        'html[data-' + SCRIPT_ID + '-site="dasher"] [data-testid="app"],',
-        'html[data-' + SCRIPT_ID + '-site="dasher"] #root,',
-        'html[data-' + SCRIPT_ID + '-site="dasher"] [role="main"] {',
-        '  background-color: #111118 !important; color: #e8e8f0 !important;',
-        '}',
-        'html[data-' + SCRIPT_ID + '-site="dasher"] input,',
-        'html[data-' + SCRIPT_ID + '-site="dasher"] textarea,',
-        'html[data-' + SCRIPT_ID + '-site="dasher"] [role="dialog"] {',
-        '  background-color: #1a1a22 !important; color: #e8e8f0 !important; border-color: #3a3a45 !important;',
-        '}',
-        ].join('\n');
+        return themeCSS(getSetting('theme') || 'midnight');
     }
 
 
@@ -1968,84 +2339,6 @@
     }
 
 
-    // =====================================================================
-    //  CATPPUCCIN THEME PALETTES
-    //  https://github.com/catppuccin/catppuccin
-    // =====================================================================
-    var CATPPUCCIN = {
-        mocha: {
-            base: '#1e1e2e', mantle: '#181825', crust: '#11111b',
-            surface0: '#313244', surface1: '#45475a', surface2: '#585b70',
-            overlay0: '#6c7086', overlay1: '#7f849c', overlay2: '#9399b2',
-            text: '#cdd6f4', subtext0: '#a6adc8', subtext1: '#bac2de',
-            red: '#f38ba8', green: '#a6e3a1', blue: '#89b4fa',
-            yellow: '#f9e2af', peach: '#fab387', mauve: '#cba6f7',
-            teal: '#94e2d5', lavender: '#b4befe', flamingo: '#f2cdcd',
-            rosewater: '#f5e0dc', sapphire: '#74c7ec', sky: '#89dceb',
-            maroon: '#eba0ac', pink: '#f5c2e7',
-        },
-        frappe: {
-            base: '#303446', mantle: '#292c3c', crust: '#232634',
-            surface0: '#414559', surface1: '#51576d', surface2: '#626880',
-            overlay0: '#737994', overlay1: '#838ba7', overlay2: '#949cbb',
-            text: '#c6d0f5', subtext0: '#a5adce', subtext1: '#b5bfe2',
-            red: '#e78284', green: '#a6d189', blue: '#8caaee',
-            yellow: '#e5c890', peach: '#ef9f76', mauve: '#ca9ee6',
-            teal: '#81c8be', lavender: '#babbf1', flamingo: '#eebebe',
-            rosewater: '#f2d5cf', sapphire: '#85c1dc', sky: '#99d1db',
-            maroon: '#ea999c', pink: '#f4b8e4',
-        },
-        macchiato: {
-            base: '#24273a', mantle: '#1e2030', crust: '#181926',
-            surface0: '#363a4f', surface1: '#494d64', surface2: '#5b6078',
-            overlay0: '#6e738d', overlay1: '#8087a2', overlay2: '#939ab7',
-            text: '#cad3f5', subtext0: '#a5adcb', subtext1: '#b8c0e0',
-            red: '#ed8796', green: '#a6da95', blue: '#8aadf4',
-            yellow: '#eed49f', peach: '#f5a97f', mauve: '#c6a0f6',
-            teal: '#8bd5ca', lavender: '#b7bdf8', flamingo: '#f0c6c6',
-            rosewater: '#f4dbd6', sapphire: '#7dc4e4', sky: '#91d7e3',
-            maroon: '#ee99a0', pink: '#f5bde6',
-        },
-        latte: {
-            base: '#eff1f5', mantle: '#e6e9ef', crust: '#dce0e8',
-            surface0: '#ccd0da', surface1: '#bcc0cc', surface2: '#acb0be',
-            overlay0: '#9ca0b0', overlay1: '#8c8fa1', overlay2: '#7c7f93',
-            text: '#4c4f69', subtext0: '#6c6f85', subtext1: '#5c5f77',
-            red: '#d20f39', green: '#40a02b', blue: '#1e66f5',
-            yellow: '#df8e1d', peach: '#fe640b', mauve: '#8839ef',
-            teal: '#179299', lavender: '#7287fd', flamingo: '#dd7878',
-            rosewater: '#dc8a78', sapphire: '#209fb5', sky: '#04a5e5',
-            maroon: '#e64553', pink: '#ea76cb',
-        },
-    };
-
-    function catppuccinThemeCSS(themeName) {
-        var t = CATPPUCCIN[themeName] || CATPPUCCIN.mocha;
-        var isLight = themeName === 'latte';
-        return [
-        '.prism-theme.prism-theme,',
-        '[data-testid="ThemingWrapper"][data-testid="ThemingWrapper"] {',
-        '  --base-color-white:      ' + t.base + 'ff !important;',
-        '  --base-color-neutral-0:  ' + t.mantle + 'ff !important;',
-        '  --base-color-neutral-5:  ' + t.crust + 'ff !important;',
-        '  --base-color-neutral-10: ' + t.surface0 + 'ff !important;',
-        '  --base-color-neutral-20: ' + t.surface1 + 'ff !important;',
-        '  --base-color-neutral-30: ' + t.surface2 + 'ff !important;',
-        '  --base-color-neutral-40: ' + t.overlay0 + 'ff !important;',
-        '  --base-color-neutral-50: ' + t.overlay1 + 'ff !important;',
-        '  --base-color-neutral-60: ' + t.overlay2 + 'ff !important;',
-        '  --base-color-neutral-70: ' + t.subtext0 + 'ff !important;',
-        '  --base-color-neutral-80: ' + t.subtext1 + 'ff !important;',
-        '  --base-color-neutral-90: ' + t.text + 'ff !important;',
-        '  --base-color-neutral-95: ' + t.text + 'ff !important;',
-        '  --base-color-neutral-100: ' + t.text + 'ff !important;',
-        '  --base-color-black:      ' + t.text + 'ff !important;',
-        '  --usage-color-border-default: ' + t.surface0 + 'ff !important;',
-        '  --usage-color-border-focused: ' + t.lavender + 'a8 !important;',
-        '  color-scheme: ' + (isLight ? 'light' : 'dark') + ' !important;',
-        '}',
-        ].join('\n');
-    }
 
 
     // =====================================================================
@@ -2515,8 +2808,8 @@
         Object.assign(panel.style, {
             position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: '100002',
             width: 'min(420px, calc(100vw - 32px))', maxHeight: '80vh', overflowY: 'auto', padding: '22px',
-            borderRadius: '16px', background: getSetting('darkMode') ? '#1a1a25' : '#fff',
-            color: getSetting('darkMode') ? '#e0e0e8' : '#333', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            borderRadius: '16px', background: themeIsDark() ? '#1a1a25' : '#fff',
+            color: themeIsDark() ? '#e0e0e8' : '#333', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
             boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
         });
         var title = document.createElement('h2');
@@ -2699,7 +2992,7 @@
     function showSearchHistory(inputEl, history) {
         var old = document.getElementById(SCRIPT_ID + '-search-history');
         if (old) old.remove();
-        var isDark = getSetting('darkMode');
+        var isDark = themeIsDark();
         var bg = isDark ? '#222230' : '#fff';
         var fg = isDark ? '#e0e0e8' : '#333';
         var hoverBg = isDark ? '#2a2a35' : '#f0f0f0';
@@ -2755,7 +3048,7 @@
         if (itemCount === 0) { if (calc) calc.remove(); return; }
 
         var sf = subtotal * 0.15, df = 3.99, tx = subtotal * 0.10, total = subtotal + sf + df + tx;
-        var isDark = getSetting('darkMode');
+        var isDark = themeIsDark();
         var bgC = isDark ? '#1c1c25' : '#fff', fgC = isDark ? '#e0e0e8' : '#333';
         var bc = isDark ? '#2a2a35' : '#e0e0e0', fb = isDark ? 'rgba(255,80,40,0.08)' : 'rgba(255,80,40,0.05)';
         if (!calc) {
@@ -3141,7 +3434,7 @@
         var existing = document.getElementById(SCRIPT_ID + '-settings');
         if (existing) { closeSettingsPanel(); return; }
 
-        var isDark = getSetting('darkMode');
+        var isDark = themeIsDark();
         var bg = isDark ? '#1a1a25' : '#fff';
         var fg = isDark ? '#e0e0e8' : '#333';
         var borderC = isDark ? '#2a2a35' : '#e0e0e0';
@@ -3325,7 +3618,8 @@
                         outline: 'none', flexShrink: '0', marginLeft: '12px',
                     });
                     [
-                        { val: 'mocha', text: 'Mocha (dark)' },
+                        { val: 'midnight', text: 'Midnight (default)' },
+                        { val: 'mocha', text: 'Mocha' },
                         { val: 'frappe', text: 'Frappé' },
                         { val: 'macchiato', text: 'Macchiato' },
                         { val: 'latte', text: 'Latte (light)' },

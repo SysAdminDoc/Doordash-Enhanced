@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DoorDash Enhanced",
-  "version": "2.9.0",
+  "version": "2.10.0",
   "description": "DoorDash dark mode, fee transparency, checkout automation, and local utilities.",
   "action": {
     "default_title": "DoorDash Enhanced"
