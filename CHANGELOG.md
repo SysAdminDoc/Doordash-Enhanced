@@ -2,6 +2,12 @@
 
 All notable changes to Doordash-Enhanced will be documented in this file.
 
+## [v2.12.0] - 2026-08-07
+
+- Added: Extension settings are mirrored into `chrome.storage.local`. They previously lived only in the page's `localStorage`, so clearing site data wiped every preference and `doordash.com`, `doordash.ca`, and `doordash.com.au` each kept a separate, unshared copy.
+- Changed: On a domain that already has settings the userscript still starts synchronously, so the theme lands before first paint. Only a cold origin — a first visit, or one whose site data was cleared — waits for the mirror, where there is nothing themed to flash and waiting restores the settings on that same load instead of the next.
+- Changed: The mirror is authoritative and `localStorage` converges on it, so a preference changed on one DoorDash domain propagates to the others.
+
 ## [v2.11.0] - 2026-08-07
 
 - Added: The unpacked Chrome MV3 extension is committed under `extension/`, so it can be loaded straight from a clone with no build step.

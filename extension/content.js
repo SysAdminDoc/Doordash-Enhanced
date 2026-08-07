@@ -2,13 +2,43 @@
 (function() {
     'use strict';
     var PREFIX = 'dd-enhanced-extension:';
-    window.GM_getValue = function(key, fallback) {
+    var store = (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local)
+        ? chrome.storage.local
+        : null;
+
+    function settingKeys() {
+        var keys = [];
+        for (var i = 0; i < window.localStorage.length; i++) {
+            var key = window.localStorage.key(i);
+            if (key && key.indexOf(PREFIX) === 0) keys.push(key.slice(PREFIX.length));
+        }
+        return keys;
+    }
+    function readLocal(key) {
         var raw = window.localStorage.getItem(PREFIX + key);
-        if (raw === null) return fallback;
+        if (raw === null) return undefined;
         try { return JSON.parse(raw); } catch(e) { return raw; }
+    }
+    function writeLocal(key, value) {
+        window.localStorage.setItem(PREFIX + key, JSON.stringify(value));
+    }
+
+    // GM_getValue is synchronous and chrome.storage is not, so localStorage
+    // stays the read path: the document-start CSS has to land before first
+    // paint. chrome.storage is the durable mirror behind it, because page
+    // localStorage dies with "clear site data" and is not shared between
+    // doordash.com, doordash.ca and doordash.com.au.
+    window.GM_getValue = function(key, fallback) {
+        var value = readLocal(key);
+        return value === undefined ? fallback : value;
     };
     window.GM_setValue = function(key, value) {
-        window.localStorage.setItem(PREFIX + key, JSON.stringify(value));
+        writeLocal(key, value);
+        if (store) {
+            var patch = {};
+            patch[key] = value;
+            store.set(patch);
+        }
     };
     window.GM_addStyle = function(css) {
         var style = document.createElement('style');
@@ -39,13 +69,59 @@
             return undefined;
         });
     }
+
+    // Every GM_setValue writes through to chrome.storage, so the mirror always
+    // holds the most recent write from any DoorDash domain. Treat it as
+    // authoritative and let localStorage converge on it.
+    function reconcile() {
+        store.get(null, function(stored) {
+            if (chrome.runtime.lastError) return;
+            stored = stored || {};
+            var patch = {};
+            var dirty = false;
+            settingKeys().forEach(function(key) {
+                if (!Object.prototype.hasOwnProperty.call(stored, key)) {
+                    patch[key] = readLocal(key);
+                    dirty = true;
+                }
+            });
+            if (dirty) store.set(patch);
+            Object.keys(stored).forEach(function(key) {
+                if (JSON.stringify(readLocal(key)) !== JSON.stringify(stored[key])) {
+                    writeLocal(key, stored[key]);
+                }
+            });
+        });
+    }
+
+    // Warm origin: start immediately and reconcile behind the page, so a
+    // setting changed on another DoorDash domain is picked up next load.
+    // Cold origin (first visit here, or site data was cleared): nothing is
+    // themed yet so there is nothing to flash, and waiting for the mirror
+    // restores the user's settings on this very load rather than the next.
+    window.__ddEnhancedBoot = function(run) {
+        delete window.__ddEnhancedBoot;
+        if (!store) return run();
+        if (settingKeys().length) {
+            run();
+            reconcile();
+            return;
+        }
+        store.get(null, function(stored) {
+            if (!chrome.runtime.lastError && stored) {
+                Object.keys(stored).forEach(function(key) { writeLocal(key, stored[key]); });
+            }
+            run();
+        });
+    };
 })();
 
+window.__ddEnhancedBoot(function() {
 (function() {
     'use strict';
 
     var SCRIPT_ID = 'dd-enhanced';
-    var VERSION   = '2.11.0';
+    var VERSION   = '2.12.0';
 
     var DEFAULT_SETTINGS = {
         darkMode:            true,
@@ -4121,3 +4197,4 @@
     init();
 
 })();
+});

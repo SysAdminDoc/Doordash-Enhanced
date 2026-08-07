@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DoorDash Enhanced",
-  "version": "2.11.0",
+  "version": "2.12.0",
   "description": "Comprehensive DoorDash enhancer: dark mode, ad/promo blocking, fee transparency, checkout automation, and UI cleanup.",
   "icons": {
     "16": "icons/icon16.png",
@@ -19,6 +19,9 @@
       "128": "icons/icon128.png"
     }
   },
+  "permissions": [
+    "storage"
+  ],
   "host_permissions": [
     "https://gist.githubusercontent.com/*"
   ],

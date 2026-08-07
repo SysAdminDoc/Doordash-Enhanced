@@ -1,6 +1,6 @@
 # DoorDash Enhanced
 
-![Version](https://img.shields.io/badge/version-2.11.0-blue)
+![Version](https://img.shields.io/badge/version-2.12.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Firefox%20%7C%20Edge-orange)
 ![Userscript](https://img.shields.io/badge/userscript-Tampermonkey%20%7C%20Violentmonkey-informational)
@@ -35,7 +35,7 @@ Works in any Chromium browser: Chrome, Edge, Brave, Opera, Vivaldi.
 
 Click the toolbar icon for the control panel. The userscript exposes its features through the userscript-manager menu, which an extension does not have, so the popup lists those same commands — Open Settings, Toggle Dark Mode, per-feature toggles, and the navigation shortcuts — and runs them in the page. The in-page gear icon opens the full settings panel either way.
 
-Settings are stored in the page's own `localStorage` via the `GM_*` compatibility layer, which means they are kept per DoorDash domain rather than shared across regional sites.
+Settings are mirrored into `chrome.storage.local`, so they survive clearing site data and follow you across the regional DoorDash domains — configure on `doordash.com` and `doordash.ca` picks it up on its first load. Reads still come from the page's own `localStorage` so the theme lands before first paint instead of flashing light on every navigation; the mirror is the authoritative copy and `localStorage` converges on it.
 
 If you change the userscript, regenerate the extension so the two stay in sync:
 

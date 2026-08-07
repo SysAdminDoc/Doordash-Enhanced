@@ -61,6 +61,22 @@ assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>[\s\S]*?\S[\s\S]*?<\/script>/.test(popup
   'popup must not use inline script; MV3 CSP blocks it');
 assert.ok(!/\son[a-z]+\s*=/.test(popupHtml), 'popup must not use inline event handlers; MV3 CSP blocks them');
 
+// Settings are mirrored into chrome.storage. Page localStorage alone is wiped
+// by "clear site data" and is not shared between the regional DoorDash
+// domains, so losing the mirror silently loses the user's configuration.
+assert.ok(extensionManifest.permissions && extensionManifest.permissions.includes('storage'),
+  'manifest must request the storage permission for the settings mirror');
+assert.ok(/window\.GM_setValue = function[\s\S]{0,400}?store\.set\(patch\)/.test(extensionContent),
+  'GM_setValue must write through to the chrome.storage mirror');
+assert.ok(extensionContent.includes('window.__ddEnhancedBoot('),
+  'companion build must run the userscript through the boot gate');
+assert.ok(/function reconcile\(\)[\s\S]{0,600}?store\.get\(null/.test(extensionContent),
+  'companion build must reconcile localStorage against the mirror');
+// Reads stay synchronous: an await here would push the document-start CSS
+// past first paint and flash the light theme on every navigation.
+assert.ok(/window\.GM_getValue = function\(key, fallback\) \{\s*var value = readLocal\(key\);/.test(extensionContent),
+  'GM_getValue must stay synchronous');
+
 // The manifest's match list is derived from the userscript so the two cannot
 // drift; a hand-copied list silently misses any origin added later.
 const userscriptMatches = [...source.matchAll(/^\/\/ @match\s+(\S+)/gm)].map((m) => m[1]);
