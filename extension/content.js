@@ -16,14 +16,36 @@
         (document.head || document.documentElement).appendChild(style);
         return style;
     };
-    window.GM_registerMenuCommand = function() {};
+    var menuCommands = [];
+    window.GM_registerMenuCommand = function(label, fn) {
+        menuCommands.push({ label: String(label), run: fn });
+        return menuCommands.length - 1;
+    };
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+        chrome.runtime.onMessage.addListener(function(message, sender, respond) {
+            if (!message || message.channel !== 'dd-enhanced') return undefined;
+            if (message.type === 'list') {
+                respond({ commands: menuCommands.map(function(entry) { return entry.label; }) });
+                return undefined;
+            }
+            if (message.type === 'invoke') {
+                var entry = menuCommands[message.index];
+                if (entry) {
+                    try { entry.run(); } catch(e) { console.error('[DD Enhanced] menu command:', e); }
+                }
+                respond({ ok: !!entry });
+                return undefined;
+            }
+            return undefined;
+        });
+    }
 })();
 
 (function() {
     'use strict';
 
     var SCRIPT_ID = 'dd-enhanced';
-    var VERSION   = '2.10.1';
+    var VERSION   = '2.11.0';
 
     var DEFAULT_SETTINGS = {
         darkMode:            true,

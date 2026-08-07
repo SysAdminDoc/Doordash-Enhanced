@@ -42,6 +42,30 @@ assert.ok(source.includes('function configuredPromoCodes()'), 'promo codes must 
 assert.equal(extensionManifest.version, headerVersion[1], 'companion manifest version must match the userscript');
 assert.ok(extensionContent.includes("window.GM_getValue = function"), 'companion build must include the GM_getValue shim');
 assert.ok(!extensionContent.includes('// ==UserScript=='), 'companion build must not embed userscript metadata');
+
+// The extension has no userscript-manager menu, so the whole control surface
+// reaches the user through the toolbar popup. A no-op GM_registerMenuCommand
+// silently drops all of it, which is how it shipped before v2.11.0.
+assert.ok(!/window\.GM_registerMenuCommand = function\(\) \{\};/.test(extensionContent),
+  'companion build must not stub GM_registerMenuCommand into a no-op');
+assert.ok(extensionContent.includes('chrome.runtime.onMessage.addListener'),
+  'companion build must expose recorded menu commands to the popup');
+assert.equal(extensionManifest.action.default_popup, 'popup.html', 'toolbar action must open the popup');
+['16', '32', '48', '128'].forEach((size) => {
+  const icon = extensionManifest.icons[size];
+  assert.ok(icon, `manifest must declare a ${size}px icon`);
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'extension', icon)), `${icon} must exist on disk`);
+});
+const popupHtml = fs.readFileSync(path.join(__dirname, '..', 'extension', 'popup.html'), 'utf8');
+assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>[\s\S]*?\S[\s\S]*?<\/script>/.test(popupHtml),
+  'popup must not use inline script; MV3 CSP blocks it');
+assert.ok(!/\son[a-z]+\s*=/.test(popupHtml), 'popup must not use inline event handlers; MV3 CSP blocks them');
+
+// The manifest's match list is derived from the userscript so the two cannot
+// drift; a hand-copied list silently misses any origin added later.
+const userscriptMatches = [...source.matchAll(/^\/\/ @match\s+(\S+)/gm)].map((m) => m[1]);
+assert.deepEqual(extensionManifest.content_scripts[0].matches, userscriptMatches,
+  'manifest matches must be derived from the userscript @match directives');
 assert.ok(filterList.includes('[data-testid="LegoStandardCarouselContainer"]:has-text(Sponsored)'), 'standalone filter list must cover sponsored carousels');
 assert.ok(filterList.includes('[data-testid*="dashpass" i]'), 'standalone filter list must cover DashPass promotions');
 

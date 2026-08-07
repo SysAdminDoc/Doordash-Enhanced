@@ -1,6 +1,6 @@
 # DoorDash Enhanced
 
-![Version](https://img.shields.io/badge/version-2.10.1-blue)
+![Version](https://img.shields.io/badge/version-2.11.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Firefox%20%7C%20Edge-orange)
 ![Userscript](https://img.shields.io/badge/userscript-Tampermonkey%20%7C%20Violentmonkey-informational)
@@ -22,15 +22,31 @@ The Prism-token dark theme also covers the DoorDash Dasher web view when the use
 
 To access settings, click the gear icon in the DoorDash header bar or use the Tampermonkey/Violentmonkey menu command.
 
-### Optional Chrome extension build
+### Or install as a Chrome extension (no userscript manager needed)
 
-The same feature source can be built as an unpacked Chrome MV3 extension:
+The repo ships a ready-to-load unpacked MV3 extension in [`extension/`](extension/) — there is nothing to build:
+
+1. Clone or download this repo
+2. Open `chrome://extensions` and turn on **Developer mode** (top right)
+3. Click **Load unpacked** and select the `extension` folder
+4. Open DoorDash — if a tab was already open, reload it once
+
+Works in any Chromium browser: Chrome, Edge, Brave, Opera, Vivaldi.
+
+Click the toolbar icon for the control panel. The userscript exposes its features through the userscript-manager menu, which an extension does not have, so the popup lists those same commands — Open Settings, Toggle Dark Mode, per-feature toggles, and the navigation shortcuts — and runs them in the page. The in-page gear icon opens the full settings panel either way.
+
+Settings are stored in the page's own `localStorage` via the `GM_*` compatibility layer, which means they are kept per DoorDash domain rather than shared across regional sites.
+
+If you change the userscript, regenerate the extension so the two stay in sync:
 
 ```bash
-node scripts/build-extension.js
+node scripts/build-extension.js          # regenerate
+node scripts/build-extension.js --check  # fail if stale (what CI runs)
 ```
 
-Then open `chrome://extensions`, enable **Developer mode**, and choose **Load unpacked** for the `extension` directory. The build uses local browser storage as its `GM_*` compatibility layer.
+`manifest.json`, `popup.html`, `popup.js`, and `content.js` are all generated from `DoorDashEnhanced.user.js`; only the icons are checked in as source. The manifest's match list is derived from the userscript's `@match` directives, so the extension cannot quietly miss an origin the userscript supports.
+
+> Chrome will not accept an unpacked extension as a `.crx` without signing, and this project ships unsigned — **Load unpacked** is the supported path.
 
 ---
 

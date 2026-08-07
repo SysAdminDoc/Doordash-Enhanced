@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DoorDash Enhanced</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; padding: 12px; width: 260px;
+    background: #14161b; color: #edf0f4;
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  h1 {
+    margin: 0 0 2px; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; gap: 7px;
+  }
+  h1 img { width: 16px; height: 16px; }
+  .version { color: #a2aab7; font-size: 11px; margin: 0 0 10px; }
+  #status { color: #a2aab7; font-size: 12px; margin: 0; }
+  #commands { display: flex; flex-direction: column; gap: 5px; }
+  button {
+    text-align: left; padding: 7px 9px; border-radius: 8px; cursor: pointer;
+    background: #1b1e25; color: #edf0f4; border: 1px solid #2b303a;
+    font: inherit;
+  }
+  button:hover { background: #21252d; border-color: #3a414d; }
+  button:active { background: #2b303a; }
+  button:focus-visible { outline: 2px solid #ff8f7a; outline-offset: 1px; }
+</style>
+</head>
+<body>
+  <h1><img src="icons/icon32.png" alt=""> DoorDash Enhanced</h1>
+  <p class="version" id="version"></p>
+  <p id="status">Loading&hellip;</p>
+  <div id="commands"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
