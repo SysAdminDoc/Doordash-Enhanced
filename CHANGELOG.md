@@ -2,6 +2,10 @@
 
 All notable changes to Doordash-Enhanced will be documented in this file.
 
+## [v2.10.1] - 2026-08-07
+
+- Fixed: Order-date metadata in the store reorder carousel is no longer unreadable. DoorDash sets that text with a literal `rgb(118,118,118)` instead of a Prism token, so no theme sheet can reach it — and the only CSS handle is a styled-components hash that is regenerated on every deploy. It is now matched on its rendered color inside that one container and re-pointed at the subdued-text token. All three captured pages measure zero WCAG AA failures on every palette, including Latte, where DoorDash's own light theme ships ten.
+
 ## [v2.10.0] - 2026-08-06
 
 - Added: A single theme engine that generates every palette from one token map, replacing the separate dark-mode and Catppuccin sheets that previously raced each other in the style bundle.

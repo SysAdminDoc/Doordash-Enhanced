@@ -1,6 +1,6 @@
 # DoorDash Enhanced
 
-![Version](https://img.shields.io/badge/version-2.10.0-blue)
+![Version](https://img.shields.io/badge/version-2.10.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Firefox%20%7C%20Edge-orange)
 ![Userscript](https://img.shields.io/badge/userscript-Tampermonkey%20%7C%20Violentmonkey-informational)

@@ -23,7 +23,7 @@
     'use strict';
 
     var SCRIPT_ID = 'dd-enhanced';
-    var VERSION   = '2.10.0';
+    var VERSION   = '2.10.1';
 
     var DEFAULT_SETTINGS = {
         darkMode:            true,
@@ -185,8 +185,18 @@
             group: 'Appearance',
             desc: 'Full dark theme via Prism variable overrides',
             cssFactory: function() { return darkModeCSS(); },
-            init: function() { refreshCssBundle(); },
-            destroy: function() { refreshCssBundle(); }
+            init: function() {
+                refreshCssBundle();
+                // A few text colors are literals with no token behind them;
+                // they have to be matched on their rendered value instead.
+                repaintLiteralText();
+                this._obs = safeObserver(function(node) { repaintLiteralText(node); });
+            },
+            destroy: function() {
+                if (this._obs) this._obs.disconnect();
+                clearLiteralTextRepaint();
+                refreshCssBundle();
+            }
         },
 
         // -- WIDE LAYOUT --------------------------------------------------
@@ -1290,6 +1300,76 @@
 
     function darkModeCSS() {
         return themeCSS(getSetting('theme') || 'midnight');
+    }
+
+
+    // =====================================================================
+    //  LITERAL TEXT REPAINT
+    //
+    //  A few DoorDash rules set a text color as a literal instead of through
+    //  a Prism token, so the theme sheet cannot reach them. On the store page
+    //  the order-date metadata in the reorder carousel is one: a hardcoded
+    //  rgb(118,118,118) that measures 3.67:1 on a dark surface.
+    //
+    //  CSS cannot single those elements out. The only handle is the
+    //  styled-components hash beside them (.dCbnoF), which is regenerated on
+    //  every deploy, and the surrounding container holds primary text that
+    //  must not be recolored. The rendered color is the stable signal, so
+    //  this matches on that instead - inside a bounded container, never over
+    //  the whole document.
+    //
+    //  DoorDash ships these failing too (4.24:1 in their own light theme),
+    //  so this is a fix rather than a regression repair.
+    // =====================================================================
+
+    var LITERAL_TEXT_FIXUPS = {
+        'rgb(118, 118, 118)': 'var(--usage-color-text-subdued-default)',
+        'rgb(25, 25, 25)':    'var(--usage-color-text-default)'
+    };
+    var LITERAL_TEXT_SCOPE = '[data-testid="carousel-slider"]';
+    var LITERAL_TEXT_NODES = 'span, p, a, li, h1, h2, h3, h4, h5, h6';
+    var LITERAL_TEXT_FLAG  = 'ddLiteralText';
+
+    function literalTextScopes(node) {
+        var scopes = [];
+        if (node && node.nodeType === 1) {
+            if (node.matches && node.matches(LITERAL_TEXT_SCOPE)) scopes.push(node);
+            if (node.querySelectorAll) {
+                Array.prototype.push.apply(scopes, node.querySelectorAll(LITERAL_TEXT_SCOPE));
+            }
+            if (!scopes.length && node.closest) {
+                var owner = node.closest(LITERAL_TEXT_SCOPE);
+                if (owner) scopes.push(owner);
+            }
+            if (scopes.length) return scopes;
+        }
+        return Array.prototype.slice.call(document.querySelectorAll(LITERAL_TEXT_SCOPE));
+    }
+
+    function repaintLiteralText(node) {
+        // Gated on the theme being active, not on it being dark: the literals
+        // are tuned for DoorDash's own white canvas, so they are wrong under
+        // any replacement palette. The replacements are tokens, which resolve
+        // per palette, so one mapping serves all five.
+        if (!getSetting('darkMode')) return;
+        literalTextScopes(node).forEach(function(scope) {
+            var nodes = scope.querySelectorAll(LITERAL_TEXT_NODES);
+            for (var i = 0; i < nodes.length; i++) {
+                var el = nodes[i];
+                if (el.dataset[LITERAL_TEXT_FLAG]) continue;
+                var replacement = LITERAL_TEXT_FIXUPS[window.getComputedStyle(el).color];
+                if (!replacement) continue;
+                el.style.setProperty('color', replacement, 'important');
+                el.dataset[LITERAL_TEXT_FLAG] = '1';
+            }
+        });
+    }
+
+    function clearLiteralTextRepaint() {
+        document.querySelectorAll('[data-dd-literal-text]').forEach(function(el) {
+            el.style.removeProperty('color');
+            delete el.dataset[LITERAL_TEXT_FLAG];
+        });
     }
 
 

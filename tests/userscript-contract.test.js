@@ -27,6 +27,17 @@ assert.ok(source.includes("var CSS_BUNDLE_ID = SCRIPT_ID + '-styles';"), 'CSS-on
 assert.ok(source.includes('entryMatcher: isCheckoutPage'), 'page-bound features must declare an entry matcher');
 assert.ok(source.includes('function registerFeatureMenuCommands()'), 'boolean features must be available from the userscript menu');
 assert.ok(source.includes('function runPromoCodeTrial()'), 'promo-code attempts must be explicitly user-triggered');
+
+// The literal-text repaint is the one place the theme reaches past the token
+// graph and writes inline styles, so its blast radius is pinned here.
+assert.ok(source.includes('var LITERAL_TEXT_SCOPE ='), 'literal-text repaint must declare a bounded container scope');
+assert.ok(!/var LITERAL_TEXT_SCOPE\s*=\s*['"]\s*\*?\s*['"]/.test(source), 'literal-text repaint must not scope to the whole document');
+assert.ok(/function repaintLiteralText\([\s\S]{0,500}?if \(!getSetting\('darkMode'\)\) return;/.test(source), 'literal-text repaint must be gated on the theme being active');
+assert.ok(source.includes('function clearLiteralTextRepaint()'), 'literal-text repaint must be revertible on teardown');
+assert.ok(source.includes('clearLiteralTextRepaint();'), 'dark mode teardown must call the literal-text revert');
+const themeTokenSheet = source.match(/function themeCSS\(paletteName\)[\s\S]*?\n    \}\n/);
+assert.ok(themeTokenSheet, 'theme engine must expose a single palette-driven sheet generator');
+assert.ok(!/--base-color-white\s*:/.test(themeTokenSheet[0]), '--base-color-white backs primary-action text and must not be re-pointed');
 assert.ok(source.includes('function configuredPromoCodes()'), 'promo codes must come from local user settings');
 assert.equal(extensionManifest.version, headerVersion[1], 'companion manifest version must match the userscript');
 assert.ok(extensionContent.includes("window.GM_getValue = function"), 'companion build must include the GM_getValue shim');
