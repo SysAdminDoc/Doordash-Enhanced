@@ -61,3 +61,30 @@ All notable changes to Doordash-Enhanced will be documented in this file.
 - Added: Add files via upload
 - Rename DoorDash Enhanced-2.2.0.user.js to DoorDashEnhanced.user.js
 - Create DoorDash Enhanced-2.2.0.user.js
+
+## Roadmap archive — 2026-08-10 — ROADMAP.md
+
+<details>
+<summary>Original roadmap snapshot</summary>
+
+```markdown
+# DoorDash Enhanced Roadmap
+
+Userscript that adds dark mode, ad blocking, fee transparency, checkout automation, and UI polish to DoorDash. Tracks remaining work beyond v2.12.0.
+
+## Planned Features
+
+### Stability / Core
+
+### Features
+
+### UI / Theming
+
+### Persistence / Sync
+
+### Performance
+
+### Packaging
+```
+
+</details>
