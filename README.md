@@ -5,6 +5,16 @@
 ![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Firefox%20%7C%20Edge-orange)
 ![Userscript](https://img.shields.io/badge/userscript-Tampermonkey%20%7C%20Violentmonkey-informational)
 
+<p align="center">
+  <a href="https://ko-fi.com/X8K126YVER">
+    <img height="42" src="https://storage.ko-fi.com/cdn/kofi2.png?v=3" alt="Buy me a coffee on Ko-fi" />
+  </a>
+</p>
+
+<p align="center">
+  <sub><em>If this project helps you, a coffee helps me keep working on it.</em></sub>
+</p>
+
 > A comprehensive userscript that transforms the DoorDash experience with dark mode, ad blocking, fee transparency, checkout automation, and polished UI enhancements — all togglable from a built-in settings panel.
 
 The Prism-token dark theme also covers the DoorDash Dasher web view when the userscript is enabled there.
